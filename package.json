@@ -1,0 +1,26 @@
+{
+  "name": "queenfi-github-app-core",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Zero-configuration GitHub App bootstrap system with automatic fallback to GITHUB_TOKEN",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "generate-manifest-url": "node --loader ts-node/esm scripts/generateManifestUrl.ts",
+    "exchange-code": "node --loader ts-node/esm scripts/exchangeCodeForToken.ts"
+  },
+  "dependencies": {
+    "@octokit/rest": "22.0.1",
+    "js-yaml": "4.1.1",
+    "node-fetch": "3.3.2"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "4.0.9",
+    "@types/node": "22.0.0",
+    "ts-node": "10.9.2",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

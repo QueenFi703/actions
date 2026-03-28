@@ -1,0 +1,14 @@
+name: Actions Run Inspector
+url: https://github.com/QueenFi703/queenfi-github-app-core
+hook_attributes:
+  url: https://github.com/QueenFi703/queenfi-github-app-core/actions
+
+public: true
+
+default_permissions:
+  actions: read
+  metadata: read
+
+default_events:
+  - workflow_run
+  - workflow_job

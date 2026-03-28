@@ -1,6 +1,20 @@
 # GitHub Actions for Gradle builds
 
-This repository contains a set of GitHub Actions that are useful for building Gradle projects on GitHub.
+This repository provides a zero-configuration GitHub App bootstrap system with automatic fallback to GITHUB_TOKEN and progressive capability escalation.
+
+## GitHub App Bootstrap (`queenfi703/github-bootstrap-app-core`)
+
+### Features
+- ✅ No secrets required to start
+- 🔁 Auto-upgrades to GitHub App auth
+- 🧠 Self-healing installation resolution
+- 🔌 Reusable across any repo
+
+See [docs/setup.md](docs/setup.md) for setup instructions and [docs/architecture.md](docs/architecture.md) for design details.
+
+---
+
+This repository also contains a set of GitHub Actions that are useful for building Gradle projects on GitHub.
 
 > [!IMPORTANT]
 > ## Licensing notice
