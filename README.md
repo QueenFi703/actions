@@ -6,8 +6,8 @@ This repository provides a zero-configuration GitHub App bootstrap system with a
 
 ### Features
 - ✅ No secrets required to start
-- 🔁 Auto-upgrades to GitHub App auth
-- 🧠 Self-healing installation resolution
+- 🔑 Supports `GITHUB_TOKEN` authentication (available automatically in Actions)
+- 🔁 GitHub App auth support planned (not yet implemented)
 - 🔌 Reusable across any repo
 
 See [docs/setup.md](docs/setup.md) for setup instructions and [docs/architecture.md](docs/architecture.md) for design details.

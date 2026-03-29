@@ -25,13 +25,14 @@ queenfi-github-app-core/
 
 The system resolves authentication in the following priority order:
 
-1. **GitHub App** — Full API access. Requires `GITHUB_APP_ID`, `GITHUB_APP_PRIVATE_KEY`, and `GITHUB_APP_INSTALLATION_ID`.
-2. **GITHUB_TOKEN** — Standard Actions token. Available automatically in every workflow run.
-3. **Error** — Thrown when neither option is available, with actionable instructions.
+1. **GITHUB_TOKEN** — Standard Actions token. Available automatically in every workflow run.
+2. **Error** — Thrown when no authentication is available, with actionable instructions.
 
-## Self-Healing Installation Resolution
+> **Note:** GitHub App auth is not yet implemented. If `GITHUB_APP_ID` and `GITHUB_APP_PRIVATE_KEY` are set, an error is raised directing you to use `GITHUB_TOKEN` instead.
 
-`getInstallationId.ts` queries `GET /app/installations` to automatically discover the installation ID, removing a manual setup step permanently.
+## Installation Resolution
+
+`getInstallationId.ts` queries `GET /repos/{owner}/{repo}/installation` (derived from `GITHUB_REPOSITORY`) to look up the installation for the current repository. This endpoint requires the Octokit client to be authenticated as a GitHub App.
 
 ## Reusability
 
@@ -40,7 +41,7 @@ Any repository can consume the reusable inspector workflow:
 ```yaml
 jobs:
   use:
-    uses: QueenFi703/queenfi-github-app-core/.github/workflows/reusable-inspector.yml@main
+    uses: QueenFi703/queenfi-github-app-core/.github/workflows/reusable-inspector.yml@v0.2.0
 ```
 
 See `templates/install.yml` for a ready-to-use example.

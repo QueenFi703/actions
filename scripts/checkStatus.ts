@@ -3,9 +3,13 @@ import { resolveInstallation } from "../src/getInstallationId.js";
 
 const octokit = getOctokit();
 
-console.log("Authentication method:", process.env.GITHUB_APP_ID ? "GitHub App" : "GITHUB_TOKEN");
+const isGitHubAppAuth =
+  !!process.env.GITHUB_APP_ID &&
+  !!process.env.GITHUB_APP_PRIVATE_KEY;
 
-if (process.env.GITHUB_APP_ID) {
+console.log("Authentication method:", isGitHubAppAuth ? "GitHub App" : "GITHUB_TOKEN");
+
+if (isGitHubAppAuth) {
   const installationId = await resolveInstallation(octokit);
   console.log("Installation ID:", installationId ?? "not found");
 }

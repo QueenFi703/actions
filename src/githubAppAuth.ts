@@ -1,13 +1,10 @@
 import { Octokit } from "@octokit/rest";
 
 export function getOctokit(): Octokit {
-  if (
-    process.env.GITHUB_APP_ID &&
-    process.env.GITHUB_APP_PRIVATE_KEY &&
-    process.env.GITHUB_APP_INSTALLATION_ID
-  ) {
-    // TODO: implement app auth
-    return new Octokit({ auth: "app" });
+  if (process.env.GITHUB_APP_ID && process.env.GITHUB_APP_PRIVATE_KEY) {
+    throw new Error(
+      "GitHub App auth is not yet implemented. Use GITHUB_TOKEN authentication instead."
+    );
   }
 
   if (process.env.GITHUB_TOKEN) {

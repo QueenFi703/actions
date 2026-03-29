@@ -1,6 +1,6 @@
 {
   "name": "queenfi-github-app-core",
-  "version": "1.0.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Zero-configuration GitHub App bootstrap system with automatic fallback to GITHUB_TOKEN",
