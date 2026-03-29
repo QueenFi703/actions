@@ -6,6 +6,7 @@
   "description": "Zero-configuration GitHub App bootstrap system with automatic fallback to GITHUB_TOKEN",
   "scripts": {
     "build": "tsc --noEmit",
+    "compile": "tsc",
     "generate-manifest-url": "node --loader ts-node/esm scripts/generateManifestUrl.ts",
     "exchange-code": "node --loader ts-node/esm scripts/exchangeCodeForToken.ts"
   },
