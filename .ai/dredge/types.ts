@@ -41,6 +41,12 @@ export interface PatchContext {
   failures: BuildFailure[];
   /** The failed workflow run ID. */
   runId: number;
+  /**
+   * Dedicated healing branch (e.g. "dot/heal/12345") that patches should
+   * commit their file changes to.  When absent, patches fall back to the
+   * repository's default branch.
+   */
+  healingBranch?: string;
 }
 
 /** Result summary returned after a healing cycle. */

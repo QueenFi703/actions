@@ -46,6 +46,7 @@ const kotlinDaemonPatch: Patch = {
       message: "fix(kotlin): increase Kotlin daemon JVM heap [DOT]",
       content: Buffer.from(newContent).toString("base64"),
       ...(sha ? { sha } : {}),
+      ...(ctx.healingBranch ? { branch: ctx.healingBranch } : {}),
     });
 
     return true;

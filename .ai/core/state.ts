@@ -19,7 +19,6 @@ export type HealingPhase =
   | "initializing"
   | "analyzing"
   | "patching"
-  | "committing"
   | "pr-opened"
   | "done"
   | "failed";

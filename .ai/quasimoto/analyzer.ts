@@ -82,8 +82,9 @@ export function analyzeLog(log: string): BuildFailure[] {
 function deduplicate(failures: BuildFailure[]): BuildFailure[] {
   const seen = new Set<string>();
   return failures.filter(f => {
-    if (seen.has(f.message)) return false;
-    seen.add(f.message);
+    const key = `${f.category}|${f.severity}|${f.message}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
     return true;
   });
 }
