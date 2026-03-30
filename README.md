@@ -30,7 +30,7 @@ This repository also contains a set of GitHub Actions that are useful for buildi
 > If you do not agree to these license terms, do not use the `gradle-actions-caching` component.
 
 This license notice will be displayed in workflow logs and each job summary. To suppress this message, 
-either [accept the terms of use](docs/setup-gradle.md#publishing-to-scansgradlecom) in your workflow, or [provide a Develocity access key](docs/setup-gradle.md#managing-develocity-access-keys).
+either [enable build scan publishing](docs/setup-gradle.md#publishing-to-scansgradlecom) (terms of use are pre-accepted by default) in your workflow, or [provide a Develocity access key](docs/setup-gradle.md#managing-develocity-access-keys).
 
 ## The `setup-gradle` action
 

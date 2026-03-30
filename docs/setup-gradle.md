@@ -755,15 +755,15 @@ The `setup-gradle` plugin provides a number of features to enable and enhance pu
 If you don't have a a private Develocity instance, you can easily publish Build Scans to the 
 free, public Develocity instance (https://scans.gradle.com).
 
-To publish to https://scans.gradle.com, you must specify in your workflow that you accept the [Gradle Terms of Use](https://gradle.com/help/legal-terms-of-use).
+By using this action you are accepting the [Gradle Terms of Use](https://gradle.com/help/legal-terms-of-use),
+which are pre-accepted via the default values of `build-scan-terms-of-use-url` and `build-scan-terms-of-use-agree`.
+To publish Build Scans, simply enable `build-scan-publish`:
 
 ```yaml
     - name: Setup Gradle to publish build scans
       uses: gradle/actions/setup-gradle@v5
       with:
         build-scan-publish: true
-        build-scan-terms-of-use-url: 'https://gradle.com/terms-of-service'
-        build-scan-terms-of-use-agree: 'yes'
 
     - name: Run a Gradle build - a build scan will be published automatically
       run: ./gradlew build
