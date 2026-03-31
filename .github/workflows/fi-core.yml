@@ -56,4 +56,6 @@ jobs:
           TARGET_REPO: ${{ steps.inputs.outputs.target_repo }}
           RUN_ID: ${{ steps.inputs.outputs.run_id }}
           GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
         run: node --loader ts-node/esm .ai/bootstrap/init.ts

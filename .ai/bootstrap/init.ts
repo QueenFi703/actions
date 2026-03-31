@@ -1,10 +1,10 @@
-// Credits: QueenFi703
 import { Octokit } from "@octokit/rest";
 import { analyzeLog } from "../quasimoto/analyzer.js";
 import { collectFailures } from "../core/checks.js";
 import { orchestrate } from "../core/dot.js";
 import { createState, advancePhase, serializeState } from "../core/state.js";
-import { buildOctokit, parseRepo, createHealingBranch, openHealingPr } from "../utils/git.js";
+import { parseRepo, createHealingBranch, openHealingPr } from "../utils/git.js";
+import { buildOctokit } from "../utils/octokit.js";
 import type { PatchContext } from "../dredge/types.js";
 
 /**
@@ -33,7 +33,7 @@ async function main(): Promise<void> {
   }
 
   const { owner, repo } = parseRepo(targetRepoEnv);
-  const octokit: Octokit = buildOctokit();
+  const octokit: Octokit = await buildOctokit();
 
   let state = createState(targetRepoEnv, runId);
   console.log(`[INIT] Starting healing session: ${serializeState(state)}`);
