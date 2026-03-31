@@ -7,7 +7,7 @@ export async function createOrUpdateHealingBranch(params: {
   sha: string; // commit SHA to point the branch at
 }) {
   const { owner, repo, branchName, sha } = params;
-  const octokit = buildOctokit();
+  const octokit = await buildOctokit();
 
   const ref = `refs/heads/${branchName}`;
 

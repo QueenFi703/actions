@@ -17,9 +17,9 @@ export async function extractLogsFromRedirect(downloadResp: {
   const buffer = Buffer.from(await archiveResp.arrayBuffer());
   const zip = new AdmZip(buffer);
 
-  let logs = "";
+  const logEntries: string[] = [];
   for (const entry of zip.getEntries()) {
-    if (!entry.isDirectory) logs += zip.readAsText(entry) + "\n";
+    if (!entry.isDirectory) logEntries.push(zip.readAsText(entry));
   }
-  return logs;
+  return logEntries.join("\n");
 }
