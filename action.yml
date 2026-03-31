@@ -1,22 +1,14 @@
 name: QueenFi703/Github bootstrap app
-description: Zero-configuration GitHub App bootstrap with automatic fallback to GITHUB_TOKEN.
-
-inputs:
-  app-id:
-    description: GitHub App ID. If omitted, falls back to GITHUB_APP_ID environment variable.
-    required: false
-  private-key:
-    description: GitHub App private key (PEM-encoded). If omitted, falls back to GITHUB_APP_PRIVATE_KEY environment variable.
-    required: false
-
-outputs:
-  token:
-    description: A short-lived GitHub installation access token, or the GITHUB_TOKEN when no App credentials are available.
+description: A collection of actions for building Gradle projects, as well as generating a dependency graph via Dependency Submission.
 
 runs:
-  using: node20
-  main: dist/bootstrap/main/index.js
+  using: "composite"
+  steps:
+  - run: |
+      echo "::error::The path 'gradle/actions' is not a valid action. Please use 'gradle/actions/setup-gradle' or 'gradle/actions/dependency-submission'."
+      exit 1
+    shell: bash
 
 branding:
-  icon: 'key'
+  icon: 'box'
   color: 'gray-dark'

@@ -5,13 +5,11 @@
   "type": "module",
   "description": "Zero-configuration GitHub App bootstrap system with automatic fallback to GITHUB_TOKEN",
   "scripts": {
-    "build": "npm run compile && tsc --noEmit",
-    "compile": "esbuild src/main.ts --bundle --platform=node --target=node20 --format=esm --banner:js=\"import {createRequire} from 'module';const require=createRequire(import.meta.url);\" --outfile=dist/bootstrap/main/index.js --sourcemap --minify",
+    "build": "tsc --noEmit",
     "generate-manifest-url": "node --loader ts-node/esm scripts/generateManifestUrl.ts",
     "exchange-code": "node --loader ts-node/esm scripts/exchangeCodeForToken.ts"
   },
   "dependencies": {
-    "@actions/core": "3.0.0",
     "@octokit/rest": "22.0.1",
     "adm-zip": "0.5.16",
     "js-yaml": "4.1.1",
@@ -21,7 +19,6 @@
     "@types/adm-zip": "0.5.8",
     "@types/js-yaml": "4.0.9",
     "@types/node": "^22.19.15",
-    "esbuild": "0.27.4",
     "ts-node": "10.9.2",
     "typescript": "5.9.3"
   },
