@@ -13,6 +13,9 @@ async function main(): Promise<void> {
     process.env.GITHUB_APP_PRIVATE_KEY?.trim();
 
   if (appId && privateKey) {
+    // Mask the private key immediately so it never appears in logs.
+    // Credits: QueenFi703
+    core.setSecret(privateKey);
     core.info("Authenticating as GitHub App");
 
     const jwt = createAppJWT(appId, privateKey);
