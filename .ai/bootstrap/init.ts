@@ -1,9 +1,10 @@
+// Credits: QueenFi703
 import { Octokit } from "@octokit/rest";
 import { analyzeLog } from "../quasimoto/analyzer.js";
 import { collectFailures } from "../core/checks.js";
 import { orchestrate } from "../core/dot.js";
 import { createState, advancePhase, serializeState } from "../core/state.js";
-import { buildOctokit, parseRepo } from "../utils/git.js";
+import { buildOctokit, parseRepo, createHealingBranch, openHealingPr } from "../utils/git.js";
 import type { PatchContext } from "../dredge/types.js";
 
 /**
@@ -51,14 +52,29 @@ async function main(): Promise<void> {
     return;
   }
 
+  // Create a dedicated healing branch so patches never touch the default branch directly.
+  const healingBranch = await createHealingBranch(octokit, owner, repo, runId);
+  console.log(`[INIT] Created healing branch: ${healingBranch}`);
+
   // Phase: patching
   state = advancePhase(state, "patching");
-  const context: PatchContext = { octokit, owner, repo, failures, runId };
+  const context: PatchContext = { octokit, owner, repo, failures, runId, healingBranch };
   const result = await orchestrate(context);
+
+  if (result.applied > 0) {
+    // Open (or locate) a PR for the healing branch.
+    try {
+      const prUrl = await openHealingPr(octokit, owner, repo, healingBranch, runId);
+      result.prOpened = true;
+      result.prUrl = prUrl;
+    } catch (err) {
+      console.error("[INIT] Failed to open healing PR:", err);
+    }
+  }
 
   state = {
     ...state,
-    phase: result.prOpened ? "pr-opened" : result.applied > 0 ? "committing" : "done",
+    phase: result.prOpened ? "pr-opened" : "done",
     patchesApplied: result.applied,
     prOpened: result.prOpened,
     prUrl: result.prUrl,

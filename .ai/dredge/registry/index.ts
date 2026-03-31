@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import { gradlePatches } from "./gradle/index.js";
 import { kotlinPatches } from "./kotlin/index.js";
 import { workflowPatches } from "./workflow/index.js";

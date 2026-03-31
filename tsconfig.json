@@ -10,7 +10,8 @@
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noImplicitReturns": true
+    "noImplicitReturns": true,
+    "skipLibCheck": true
   },
   "include": ["src/**/*.ts", "scripts/**/*.ts", ".ai/**/*.ts"],
   "exclude": ["node_modules", "sources"]

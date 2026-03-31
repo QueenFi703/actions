@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import { getOctokit } from "../src/githubAppAuth.js";
 import { resolveInstallation } from "../src/getInstallationId.js";
 

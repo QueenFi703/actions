@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import { Octokit } from "@octokit/rest";
 
 export function getOctokit(): Octokit {
@@ -7,8 +8,12 @@ export function getOctokit(): Octokit {
     );
   }
 
-  if (process.env.GITHUB_TOKEN) {
-    return new Octokit({ auth: process.env.GITHUB_TOKEN });
+  // Use .trim() || to guard against empty-string secrets (GitHub Actions
+  // exposes unset secrets as empty strings, making a plain truthiness check
+  // or ?? unreliable).
+  const token = process.env.GITHUB_TOKEN?.trim();
+  if (token) {
+    return new Octokit({ auth: token });
   }
 
   throw new Error(`

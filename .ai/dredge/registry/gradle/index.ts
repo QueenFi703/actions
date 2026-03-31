@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import type { Patch } from "../../types.js";
 
 /**
@@ -46,6 +47,7 @@ const gradleOomPatch: Patch = {
       message: "fix(gradle): increase JVM heap to resolve OOM [DOT]",
       content: Buffer.from(newContent).toString("base64"),
       ...(sha ? { sha } : {}),
+      ...(ctx.healingBranch ? { branch: ctx.healingBranch } : {}),
     });
 
     return true;
@@ -92,6 +94,7 @@ const gradleBuildCachePatch: Patch = {
       message: "fix(gradle): enable build cache to aid dependency resolution [DOT]",
       content: Buffer.from(newContent).toString("base64"),
       ...(sha ? { sha } : {}),
+      ...(ctx.healingBranch ? { branch: ctx.healingBranch } : {}),
     });
 
     return true;

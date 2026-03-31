@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import fetch from "node-fetch";
 
 const code = process.env.CODE;

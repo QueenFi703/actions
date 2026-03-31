@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import type { Patch, PatchContext, HealingResult } from "./types.js";
 import { registry } from "./registry/index.js";
 

@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 /** Persistent state for a single healing session. */
 export interface HealingState {
   /** ISO timestamp when the session started. */
@@ -19,7 +20,6 @@ export type HealingPhase =
   | "initializing"
   | "analyzing"
   | "patching"
-  | "committing"
   | "pr-opened"
   | "done"
   | "failed";
