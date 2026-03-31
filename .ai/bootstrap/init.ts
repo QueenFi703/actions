@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import { Octokit } from "@octokit/rest";
 import { analyzeLog } from "../quasimoto/analyzer.js";
 import { collectFailures } from "../core/checks.js";

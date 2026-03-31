@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import type { PatchContext, HealingResult } from "../dredge/types.js";
 import { execute } from "../dredge/executor.js";
 

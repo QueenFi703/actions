@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import { Octokit } from "@octokit/rest";
 import type { BuildFailure } from "../dredge/types.js";
 
@@ -46,6 +47,9 @@ export function isFailedConclusion(conclusion: string | null | undefined): boole
   return !!conclusion && FAILED_CONCLUSIONS.has(conclusion);
 }
 
+/** Maximum number of jobs to fetch per page when paginating the Jobs API. */
+const JOBS_PER_PAGE = 100;
+
 /**
  * List the IDs of all jobs that failed in the given workflow run.
  * Uses pagination to ensure all jobs are retrieved regardless of run size.
@@ -60,7 +64,7 @@ export async function failedJobIds(
     owner,
     repo,
     run_id: runId,
-    per_page: 100,
+    per_page: JOBS_PER_PAGE,
   });
   return jobs
     .filter(j => isFailedConclusion(j.conclusion))

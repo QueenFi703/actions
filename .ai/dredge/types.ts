@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 /** Severity of a detected build failure. */
 export type FailureSeverity = "critical" | "error" | "warning";
 

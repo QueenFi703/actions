@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import type { Patch } from "../../types.js";
 
 /**

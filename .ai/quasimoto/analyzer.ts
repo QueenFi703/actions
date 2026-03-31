@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import type { BuildFailure } from "../dredge/types.js";
 
 /** Patterns that identify known Gradle failure signatures in log output. */

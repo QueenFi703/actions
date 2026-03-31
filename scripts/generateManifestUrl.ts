@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import fs from "fs";
 import yaml from "js-yaml";
 

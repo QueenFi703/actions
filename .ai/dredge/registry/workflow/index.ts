@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import type { Patch } from "../../types.js";
 
 /**
@@ -17,6 +18,9 @@ function sanitizeMarkdown(text: string): string {
     .replace(/\r?\n/g, " ")
     .trim();
 }
+
+/** Maximum characters of a failure message to embed in a PR/issue comment. */
+const MAX_MESSAGE_LENGTH = 120;
 
 /** Re-trigger a failed workflow run by adding a workflow_dispatch trigger comment. */
 const workflowRetryPatch: Patch = {
@@ -46,7 +50,7 @@ const workflowRetryPatch: Patch = {
     const matchingPr = prs.find(pr => pr.state === "open");
     if (!matchingPr) return false;
 
-    const safeMessage = sanitizeMarkdown(workflowFailure.message).slice(0, 120);
+    const safeMessage = sanitizeMarkdown(workflowFailure.message).slice(0, MAX_MESSAGE_LENGTH);
 
     await ctx.octokit.issues.createComment({
       owner: ctx.owner,

@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 /** Persistent state for a single healing session. */
 export interface HealingState {
   /** ISO timestamp when the session started. */

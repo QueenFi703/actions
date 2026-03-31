@@ -1,3 +1,4 @@
+// Credits: QueenFi703
 import { Octokit } from "@octokit/rest";
 
 /**
