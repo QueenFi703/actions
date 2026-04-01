@@ -5,7 +5,7 @@ runs:
   using: "composite"
   steps:
   - run: |
-      echo "::error::The path 'gradle/actions' is not a valid action. Please use 'gradle/actions/setup-gradle' or 'gradle/actions/dependency-submission'."
+      echo "::error::The path 'QueenFi703/actions' is not a valid action. Please use 'QueenFi703/actions/setup-gradle' or 'QueenFi703/actions/dependency-submission'."
       exit 1
     shell: bash
 
