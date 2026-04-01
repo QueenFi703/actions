@@ -1,16 +1,64 @@
-# Grafana Alloy – CI Observability (OTLP Traces)
+# Grafana Alloy – Platform-Wide CI Observability (OTLP Traces)
 
-This directory contains the [Grafana Alloy](https://grafana.com/docs/alloy/latest/) configuration used by the `DOT Observability Layer` workflow to collect and forward OpenTelemetry traces during CI runs.
+This directory contains the [Grafana Alloy](https://grafana.com/docs/alloy/latest/) configuration and documentation for the autonomous observability system running across all CI workflows in this repository.
 
-## How it works
+## Architecture
 
-1. The workflow starts a `grafana/alloy:latest` Docker container on each runner (ephemeral).
-2. Alloy opens an OTLP receiver on ports **4317** (gRPC) and **4318** (HTTP).
-3. Build and test steps can export traces to `http://localhost:4318` (or `grpc://localhost:4317`).
-4. Alloy batches and forwards those traces to Grafana Cloud via OTLP.
-5. When the job finishes the container is removed — **no state is retained between runs**.
+```
+GitHub Actions runner (ephemeral)
+│
+├── grafana/alloy:latest  (Docker container, ports 4317/4318)
+│     ├── otelcol.receiver.otlp "ci"     ← receives traces from build/test steps
+│     ├── otelcol.processor.batch        ← batches spans before exporting
+│     └── otelcol.exporter.otlp "grafana" → Grafana Cloud (when secrets present)
+│
+└── CI steps (build, test, deploy, heal…)
+      OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318  (auto-set by composite action)
+```
 
-> **Note:** Alloy only forwards traces to Grafana Cloud when both secrets below are present. If either secret is absent, the exporter client will be misconfigured and export will silently fail, but the rest of the workflow (build + tests) will still succeed.
+Alloy runs **ephemerally** for the duration of each job. No state is retained between runs.
+
+## Composite Actions
+
+| Action | Purpose |
+|---|---|
+| `.github/actions/alloy` | **Canonical action** — starts Alloy, sleeps 5 s, exports `OTEL_*` env vars |
+| `.github/actions/setup-alloy` | Full-featured variant — health-check polling instead of sleep |
+| `.github/actions/teardown-alloy` | Dumps Alloy logs and removes the container |
+
+### Usage in any workflow
+
+```yaml
+steps:
+  - uses: actions/checkout@v4
+
+  - name: Start Alloy
+    uses: ./.github/actions/alloy
+    with:
+      grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+      grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
+      service-name: my-workflow
+
+  # … your build / test steps …
+
+  - name: Teardown Alloy
+    if: always()
+    uses: ./.github/actions/teardown-alloy
+```
+
+`OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_SERVICE_NAME` are automatically exported to `$GITHUB_ENV` by the action, so all subsequent steps inherit them without extra configuration.
+
+## Auto-Injection
+
+The workflow `.github/workflows/auto-inject-alloy.yml` triggers on every push that modifies a workflow file. It scans all workflows and **automatically injects** the `Start Alloy` step into any that are not yet instrumented, then commits the change back to the branch.
+
+**Guard logic:** a workflow is considered already instrumented if it contains any of:
+- `grafana/alloy`
+- `actions/alloy`
+- `setup-alloy`
+- `teardown-alloy`
+
+The injector skips itself (`auto-inject-alloy.yml`) and reusable/orchestrator workflows that contain no `steps:` block.
 
 ## Required GitHub Secrets
 
@@ -19,11 +67,13 @@ This directory contains the [Grafana Alloy](https://grafana.com/docs/alloy/lates
 | `GRAFANA_CLOUD_OTLP_ENDPOINT` | OTLP endpoint for your Grafana Cloud stack, e.g. `https://otlp-gateway-prod-us-central-0.grafana.net/otlp` |
 | `GRAFANA_CLOUD_AUTH` | Base64-encoded `<instance-id>:<api-token>` credentials for your Grafana Cloud stack |
 
-Add these in **Settings → Secrets and variables → Actions** in this repository.
+Add these in **Settings → Secrets and variables → Actions**.
 
-## Emitting traces from tests
+> **Note:** When either secret is absent the Alloy exporter will be misconfigured. Alloy will log a startup error for the exporter component (visible in the "Dump Alloy logs" / teardown step), but the OTLP receiver continues to accept spans and all CI steps continue normally. Check the Alloy container logs if you expect traces in Grafana Cloud but see none.
 
-Set the following environment variables in any step that should export telemetry:
+## Emitting traces from your steps
+
+Set the following environment variables in any step (or rely on the auto-exported values from the composite action):
 
 ```yaml
 env:
@@ -31,4 +81,5 @@ env:
   OTEL_SERVICE_NAME: my-service-name
 ```
 
-If your test code does not instrument with OpenTelemetry, no spans will be sent — Alloy will still run and log normally.
+If your code is not instrumented with OpenTelemetry, no spans are sent — Alloy runs and logs normally regardless.
+
