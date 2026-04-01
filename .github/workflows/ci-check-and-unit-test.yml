@@ -19,6 +19,14 @@ jobs:
     steps:
     - name: Checkout sources
       uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+    - name: Start Grafana Alloy
+      uses: ./.github/actions/setup-alloy
+      with:
+        service-name: ci-check-and-unit-test
+        grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+        grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
+
     - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
       with:
         node-version: 20
@@ -60,3 +68,7 @@ jobs:
       env:
         NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
         DEVELOCITY_ACCESS_KEY: '${{ secrets.DV_SOLUTIONS_ACCESS_KEY }}'
+
+    - name: Teardown Grafana Alloy
+      if: always()
+      uses: ./.github/actions/teardown-alloy

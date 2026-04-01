@@ -1,0 +1,43 @@
+name: "Start Grafana Alloy"
+description: "Runs Grafana Alloy as an ephemeral OTLP collector. Pass Grafana Cloud secrets as inputs when available."
+
+inputs:
+  grafana-endpoint:
+    description: "Grafana Cloud OTLP endpoint (pass secrets.GRAFANA_CLOUD_OTLP_ENDPOINT)"
+    required: false
+    default: ""
+  grafana-auth:
+    description: "Grafana Cloud basic-auth token (pass secrets.GRAFANA_CLOUD_AUTH)"
+    required: false
+    default: ""
+  service-name:
+    description: "Value for OTEL_SERVICE_NAME exported to subsequent steps"
+    required: false
+    default: "ci"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Start Alloy container
+      shell: bash
+      env:
+        GRAFANA_CLOUD_OTLP_ENDPOINT: ${{ inputs.grafana-endpoint }}
+        GRAFANA_CLOUD_AUTH: ${{ inputs.grafana-auth }}
+      run: |
+        docker run -d --name alloy \
+          -p 4317:4317 -p 4318:4318 \
+          -v "$GITHUB_WORKSPACE/monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro" \
+          -e GRAFANA_CLOUD_OTLP_ENDPOINT \
+          -e GRAFANA_CLOUD_AUTH \
+          grafana/alloy:latest \
+          run /etc/alloy/config.alloy
+
+    - name: Wait for Alloy
+      shell: bash
+      run: sleep 5
+
+    - name: Export OTLP environment variables
+      shell: bash
+      run: |
+        echo "OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318" >> "$GITHUB_ENV"
+        echo "OTEL_SERVICE_NAME=${{ inputs.service-name }}" >> "$GITHUB_ENV"
