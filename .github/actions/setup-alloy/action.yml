@@ -1,0 +1,49 @@
+name: 'Start Grafana Alloy'
+description: 'Starts Grafana Alloy as an ephemeral OTLP receiver and forwards traces to Grafana Cloud when secrets are present.'
+
+inputs:
+  service-name:
+    description: 'Value for OTEL_SERVICE_NAME exported to subsequent steps'
+    required: false
+    default: 'ci'
+  grafana-endpoint:
+    description: 'Grafana Cloud OTLP endpoint (pass secrets.GRAFANA_CLOUD_OTLP_ENDPOINT)'
+    required: false
+    default: ''
+  grafana-auth:
+    description: 'Grafana Cloud basic-auth token (pass secrets.GRAFANA_CLOUD_AUTH)'
+    required: false
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Start Grafana Alloy container
+      shell: bash
+      env:
+        GRAFANA_CLOUD_OTLP_ENDPOINT: ${{ inputs.grafana-endpoint }}
+        GRAFANA_CLOUD_AUTH: ${{ inputs.grafana-auth }}
+      run: |
+        docker run -d --name alloy \
+          -p 4317:4317 -p 4318:4318 \
+          -v "$GITHUB_WORKSPACE/monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro" \
+          -e GRAFANA_CLOUD_OTLP_ENDPOINT \
+          -e GRAFANA_CLOUD_AUTH \
+          grafana/alloy:latest \
+          run /etc/alloy/config.alloy
+
+    - name: Wait for Alloy to be ready
+      shell: bash
+      run: |
+        for i in $(seq 1 20); do
+          if docker exec alloy wget -qO- http://localhost:12345/-/ready 2>/dev/null | grep -q ready; then
+            echo "Alloy is ready after $i attempts"; break
+          fi
+          echo "Waiting for Alloy ($i/20)..."; sleep 2
+        done
+
+    - name: Export OTLP environment variables
+      shell: bash
+      run: |
+        echo "OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318" >> "$GITHUB_ENV"
+        echo "OTEL_SERVICE_NAME=${{ inputs.service-name }}" >> "$GITHUB_ENV"

@@ -15,24 +15,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Start Alloy (OTLP Receiver)
-        run: |
-          docker run -d --name alloy \
-            -p 4317:4317 -p 4318:4318 \
-            -v "$PWD/monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro" \
-            -e GRAFANA_CLOUD_OTLP_ENDPOINT="${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}" \
-            -e GRAFANA_CLOUD_AUTH="${{ secrets.GRAFANA_CLOUD_AUTH }}" \
-            grafana/alloy:latest \
-            run /etc/alloy/config.alloy
-
-      - name: Wait for Alloy
-        run: |
-          for i in $(seq 1 20); do
-            if docker exec alloy wget -qO- http://localhost:12345/-/ready 2>/dev/null | grep -q ready; then
-              echo "Alloy is ready"; break
-            fi
-            echo "Waiting for Alloy ($i/20)..."; sleep 2
-          done
+      - name: Start Grafana Alloy
+        uses: ./.github/actions/setup-alloy
+        with:
+          service-name: dot-ci-actions
+          grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+          grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -45,22 +33,12 @@ jobs:
 
       - name: Build
         working-directory: sources
-        env:
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318
-          OTEL_SERVICE_NAME: dot-ci-actions
         run: npm run build
 
       - name: Run tests
         working-directory: sources
-        env:
-          OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4318
-          OTEL_SERVICE_NAME: dot-ci-actions
         run: npm test
 
-      - name: Dump Alloy Logs
+      - name: Teardown Grafana Alloy
         if: always()
-        run: docker logs alloy --tail=200
-
-      - name: Cleanup Alloy
-        if: always()
-        run: docker rm -f alloy || true
+        uses: ./.github/actions/teardown-alloy
