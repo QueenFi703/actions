@@ -1,0 +1,29 @@
+otelcol.receiver.otlp "ci" {
+  grpc {
+    endpoint = "0.0.0.0:4317"
+  }
+  http {
+    endpoint = "0.0.0.0:4318"
+  }
+}
+
+otelcol.processor.batch "default" {}
+
+otelcol.exporter.otlp "grafana" {
+  client {
+    endpoint = env("GRAFANA_CLOUD_OTLP_ENDPOINT")
+    headers = {
+      "Authorization" = "Basic " + env("GRAFANA_CLOUD_AUTH")
+    }
+  }
+}
+
+otelcol.service "pipelines" {
+  pipelines {
+    traces = {
+      receivers  = ["otelcol.receiver.otlp.ci"]
+      processors = ["otelcol.processor.batch.default"]
+      exporters  = ["otelcol.exporter.otlp.grafana"]
+    }
+  }
+}
