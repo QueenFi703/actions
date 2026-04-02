@@ -69,6 +69,70 @@ The injector skips itself (`auto-inject-alloy.yml`) and reusable/orchestrator wo
 
 Add these in **Settings → Secrets and variables → Actions**.
 
+---
+
+## `integrations_node_exporter.alloy` — Host Metrics & Logs Integration
+
+`integrations_node_exporter.alloy` adds a **node_exporter + journald** integration that ships host-level metrics to a Prometheus remote-write endpoint and system journal logs to Grafana Cloud Loki.
+
+### What it does
+
+#### Metrics pipeline
+1. **`prometheus.exporter.unix`** — runs the built-in node_exporter with a curated set of collectors:
+   - Disables: `ipvs`, `btrfs`, `infiniband`, `xfs`, `zfs`
+   - Restricts filesystem, netclass, and netdev collection to exclude virtual/container interfaces and transient mounts.
+2. **`discovery.relabel`** — stamps every scrape target with `instance = <hostname>` and `job = integrations/node_exporter`.
+3. **`prometheus.scrape`** — scrapes the relabeled targets.
+4. **`prometheus.relabel`** — keeps only the curated allowlist of node_exporter metric names before forwarding to `prometheus.remote_write.metrics_service`.
+
+#### Logs pipeline
+1. **`loki.source.journal`** (inside the `journal_module` declare) — reads the systemd journal (up to 12 h old) and maps journal fields (`__journal__systemd_unit`, `__journal__boot_id`, `__journal__transport`, `__journal_priority_keyword`) to Loki labels (`unit`, `boot_id`, `transport`, `level`).
+2. **`loki.relabel "integrations_node_exporter"`** — sets `job = integrations/node_exporter` and `instance = <hostname>` so logs and metrics share the same identity labels.
+3. Forwards logs to `loki.write.grafana_cloud_loki`.
+
+### Required components (defined elsewhere)
+
+| Component | Purpose |
+|---|---|
+| `prometheus.remote_write.metrics_service` | Remote-write destination for metrics |
+| `loki.write.grafana_cloud_loki` | Loki write destination for logs |
+
+These must be defined in your main Alloy configuration (e.g. `config.alloy`) before loading this file.
+
+### Usage
+
+Load this file alongside your main Alloy config, or `import.file` / concatenate it into your primary config:
+
+```bash
+alloy run monitoring/alloy/config.alloy monitoring/alloy/integrations_node_exporter.alloy
+```
+
+Your main `config.alloy` (or equivalent) must define:
+
+```alloy
+prometheus.remote_write "metrics_service" {
+  endpoint {
+    url = env("PROMETHEUS_REMOTE_WRITE_URL")
+    basic_auth {
+      username = env("PROMETHEUS_USERNAME")
+      password = env("PROMETHEUS_PASSWORD")
+    }
+  }
+}
+
+loki.write "grafana_cloud_loki" {
+  endpoint {
+    url = env("LOKI_URL")
+    basic_auth {
+      username = env("LOKI_USERNAME")
+      password = env("LOKI_PASSWORD")
+    }
+  }
+}
+```
+
+Adjust the environment variable names to match your Grafana Cloud stack credentials.
+
 > **Note:** When either secret is absent the Alloy exporter will be misconfigured. Alloy will log a startup error for the exporter component (visible in the "Dump Alloy logs" / teardown step), but the OTLP receiver continues to accept spans and all CI steps continue normally. Check the Alloy container logs if you expect traces in Grafana Cloud but see none.
 
 ## Emitting traces from your steps
