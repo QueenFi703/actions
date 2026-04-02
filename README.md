@@ -164,3 +164,11 @@ jobs:
 ```
 
 See the [full action documentation](docs/wrapper-validation.md) for more advanced usage scenarios.
+
+## Credits
+
+| Name | GitHub |
+|---|---|
+| Sophia Cole | [@QueenFi703](https://github.com/QueenFi703) |
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the full list.
