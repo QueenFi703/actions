@@ -10,6 +10,26 @@ inputs:
     description: "Grafana Cloud basic-auth token (pass secrets.GRAFANA_CLOUD_AUTH)"
     required: false
     default: ""
+  grafana-metrics-url:
+    description: "Prometheus remote-write URL (pass secrets.GCLOUD_HOSTED_METRICS_URL)"
+    required: false
+    default: ""
+  grafana-metrics-id:
+    description: "Prometheus hosted-metrics instance ID / username (pass secrets.GCLOUD_HOSTED_METRICS_ID)"
+    required: false
+    default: ""
+  grafana-logs-url:
+    description: "Loki push URL (pass secrets.GCLOUD_HOSTED_LOGS_URL)"
+    required: false
+    default: ""
+  grafana-logs-id:
+    description: "Loki hosted-logs instance ID / username (pass secrets.GCLOUD_HOSTED_LOGS_ID)"
+    required: false
+    default: ""
+  grafana-rw-api-key:
+    description: "Grafana Cloud read/write API key used for Prometheus and Loki auth (pass secrets.GCLOUD_RW_API_KEY)"
+    required: false
+    default: ""
   service-name:
     description: "Value for OTEL_SERVICE_NAME exported to subsequent steps"
     required: false
@@ -23,12 +43,22 @@ runs:
       env:
         GRAFANA_CLOUD_OTLP_ENDPOINT: ${{ inputs.grafana-endpoint }}
         GRAFANA_CLOUD_AUTH: ${{ inputs.grafana-auth }}
+        GCLOUD_HOSTED_METRICS_URL: ${{ inputs.grafana-metrics-url }}
+        GCLOUD_HOSTED_METRICS_ID: ${{ inputs.grafana-metrics-id }}
+        GCLOUD_HOSTED_LOGS_URL: ${{ inputs.grafana-logs-url }}
+        GCLOUD_HOSTED_LOGS_ID: ${{ inputs.grafana-logs-id }}
+        GCLOUD_RW_API_KEY: ${{ inputs.grafana-rw-api-key }}
       run: |
         docker run -d --name alloy \
-          -p 4317:4317 -p 4318:4318 \
+          -p 4317:4317 -p 4318:4318 -p 3100:3100 \
           -v "$GITHUB_WORKSPACE/monitoring/alloy/config.alloy:/etc/alloy/config.alloy:ro" \
           -e GRAFANA_CLOUD_OTLP_ENDPOINT \
           -e GRAFANA_CLOUD_AUTH \
+          -e GCLOUD_HOSTED_METRICS_URL \
+          -e GCLOUD_HOSTED_METRICS_ID \
+          -e GCLOUD_HOSTED_LOGS_URL \
+          -e GCLOUD_HOSTED_LOGS_ID \
+          -e GCLOUD_RW_API_KEY \
           grafana/alloy:latest \
           run /etc/alloy/config.alloy
 

@@ -1,3 +1,5 @@
+// ── OTLP traces ────────────────────────────────────────────────────────────
+
 otelcol.receiver.otlp "ci" {
   grpc {
     endpoint = "0.0.0.0:4317"
@@ -26,4 +28,44 @@ otelcol.service "pipelines" {
       exporters  = ["otelcol.exporter.otlp.grafana"]
     }
   }
+}
+
+// ── Prometheus metrics ──────────────────────────────────────────────────────
+
+prometheus.remote_write "grafana" {
+  endpoint {
+    url = env("GCLOUD_HOSTED_METRICS_URL")
+
+    basic_auth {
+      username = env("GCLOUD_HOSTED_METRICS_ID")
+      password = env("GCLOUD_RW_API_KEY")
+    }
+  }
+}
+
+prometheus.scrape "alloy_self" {
+  targets         = [{"__address__" = "localhost:12345"}]
+  scrape_interval = "60s"
+  forward_to      = [prometheus.remote_write.grafana.receiver]
+}
+
+// ── Loki logs ───────────────────────────────────────────────────────────────
+
+loki.write "grafana" {
+  endpoint {
+    url = env("GCLOUD_HOSTED_LOGS_URL")
+
+    basic_auth {
+      username = env("GCLOUD_HOSTED_LOGS_ID")
+      password = env("GCLOUD_RW_API_KEY")
+    }
+  }
+}
+
+loki.source.api "ci" {
+  http {
+    listen_address = "0.0.0.0"
+    listen_port    = 3100
+  }
+  forward_to = [loki.write.grafana.receiver]
 }
