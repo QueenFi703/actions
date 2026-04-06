@@ -12,11 +12,14 @@
   "dependencies": {
     "@octokit/rest": "22.0.1",
     "adm-zip": "0.5.16",
+    "express": "^5.1.0",
     "js-yaml": "4.1.1",
-    "node-fetch": "3.3.2"
+    "node-fetch": "3.3.2",
+    "probot": "^13.4.3"
   },
   "devDependencies": {
     "@types/adm-zip": "0.5.8",
+    "@types/express": "^5.0.3",
     "@types/js-yaml": "4.0.9",
     "@types/node": "^22.19.15",
     "ts-node": "10.9.2",
