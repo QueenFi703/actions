@@ -14,6 +14,6 @@
     "skipLibCheck": true,
     "types": ["node"]
   },
-  "include": ["src/**/*.ts", "scripts/**/*.ts", ".ai/**/*.ts"],
+  "include": ["src/**/*.ts", "scripts/**/*.ts", ".ai/**/*.ts", "thresh/**/*.ts"],
   "exclude": ["node_modules", "sources"]
 }
