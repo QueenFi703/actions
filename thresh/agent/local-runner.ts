@@ -32,10 +32,9 @@ function getWorkflows(): WorkflowFile[] {
       return {
         name: f,
         raw,
-        // sha is empty in local mode; patches that set commit:true are written
-        // via writeFileSync instead of the GitHub API
+        // Parsing is intentionally skipped in local mode: all built-in patches
+        // work on raw YAML text, avoiding a js-yaml dependency in the CI path.
         sha: "",
-        parsed: undefined,
       };
     });
 }

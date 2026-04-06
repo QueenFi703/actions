@@ -5,8 +5,13 @@ export interface WorkflowFile {
   name: string;
   /** Raw YAML text */
   raw: string;
-  /** Parsed YAML object (js-yaml output) */
-  parsed: unknown;
+  /**
+   * Parsed YAML object (js-yaml output).
+   * Optional: the local runner skips YAML parsing since all built-in patches
+   * operate on the raw text.  The perception layer always populates this field
+   * when running in server (Probot) mode.
+   */
+  parsed?: unknown;
   /** Git blob SHA (needed for file-update API calls) */
   sha: string;
 }

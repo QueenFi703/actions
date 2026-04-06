@@ -46,6 +46,9 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
         cache: 'npm'
+        # package-lock.json lives one directory above thresh/ (the repo root).
+        # When this action is checked out from the Marketplace, github.action_path
+        # points to the thresh/ subdirectory inside the cloned action repo.
         cache-dependency-path: '${{ github.action_path }}/../package-lock.json'
 
     - name: Install dependencies
@@ -59,12 +62,8 @@ runs:
       env:
         GITHUB_WORKSPACE: ${{ github.workspace }}
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        # ts-node must resolve relative to the action's own node_modules
-        NODE_PATH: ${{ github.action_path }}/../node_modules
       run: |
-        PATCHES_APPLIED=0
-        OUTPUT=$(node \
-          --loader "${{ github.action_path }}/../node_modules/ts-node/esm.mjs" \
+        OUTPUT=$("${{ github.action_path }}/../node_modules/.bin/tsx" \
           "${{ github.action_path }}/agent/local-runner.ts" 2>&1) || EXIT_CODE=$?
 
         echo "$OUTPUT"

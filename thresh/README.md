@@ -4,8 +4,6 @@
 
 One brain, many repos, self-healing pipelines.
 
-One brain, many repos, self-healing pipelines.
-
 Thresh is an event-driven GitHub App + modular patch registry that automatically detects and fixes common GitHub Actions problems across every repository it is installed on.
 
 ---
