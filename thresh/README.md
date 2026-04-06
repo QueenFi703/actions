@@ -1,8 +1,80 @@
 # Thresh Agent
 
+[![GitHub Marketplace](https://img.shields.io/badge/Marketplace-Thresh%20Agent-blue?logo=github)](https://github.com/marketplace/actions/thresh-agent)
+
+One brain, many repos, self-healing pipelines.
+
 One brain, many repos, self-healing pipelines.
 
 Thresh is an event-driven GitHub App + modular patch registry that automatically detects and fixes common GitHub Actions problems across every repository it is installed on.
+
+---
+
+## Marketplace usage
+
+Once published, any repo can add Thresh in one step:
+
+```yaml
+# .github/workflows/thresh-agent.yml
+name: Thresh Agent
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+
+jobs:
+  thresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: QueenFi703/actions/thresh@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+```
+
+### Inputs
+
+| Input | Default | Description |
+|---|---|---|
+| `github-token` | `${{ github.token }}` | Token used to push committed fixes |
+| `node-version` | `20` | Node.js version for running the agent |
+| `commit-fixes` | `true` | Auto-commit patches after applying them |
+| `commit-message` | `🛠 Thresh: auto-fix workflow issues` | Commit message for applied patches |
+
+### Outputs
+
+| Output | Description |
+|---|---|
+| `patches-applied` | Number of patches applied (`0` = already healthy) |
+
+---
+
+## Publishing to the GitHub Marketplace
+
+### From this repository (sub-action, available now)
+
+The action lives at `thresh/action.yml` and is immediately usable as:
+```yaml
+uses: QueenFi703/actions/thresh@v1
+```
+
+### As a dedicated top-level Marketplace listing
+
+For a standalone Marketplace card (users can search "Thresh Agent" directly):
+
+1. Create a **public** repo: `QueenFi703/thresh-agent`
+2. Copy the `thresh/` directory contents to the **root** of that repo
+3. Push and [create a tagged release](https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository) (e.g. `v1.0.0`)
+4. On the release page, tick **"Publish this Action to the GitHub Marketplace"**
+5. Select a category (e.g. *Utilities*) and confirm
+
+GitHub indexes `action.yml` at the root of a public repo for Marketplace discovery.
 
 ---
 

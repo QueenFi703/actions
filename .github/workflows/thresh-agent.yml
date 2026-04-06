@@ -1,9 +1,8 @@
 name: Thresh Agent
 
 # Self-healing pipeline agent.
-# Runs on every pull request and push to detect and fix common workflow issues
-# (wrong runners, missing permissions, etc.) using the modular patch registry
-# in thresh/patches/.
+# Uses the Thresh composite action (thresh/action.yml) to detect and fix
+# common GitHub Actions issues via the modular patch registry.
 
 on:
   pull_request:
@@ -27,32 +26,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Use a token with write access so the push step works.
-          # GITHUB_TOKEN is sufficient for same-repo pushes.
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Run Thresh Agent
+        uses: ./thresh
         with:
-          node-version: "20"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run Thresh local agent
-        run: node --loader ts-node/esm thresh/agent/local-runner.ts
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Commit any patches applied
-        run: |
-          git config user.name  "Thresh Agent"
-          git config user.email "thresh-agent@users.noreply.github.com"
-          git add -A
-          if git diff --staged --quiet; then
-            echo "Nothing to commit — no patches were needed."
-          else
-            git commit -m "🛠 Thresh: auto-fix workflow issues"
-            git push
-          fi
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          commit-fixes: 'true'
