@@ -54,11 +54,14 @@ jobs:
       - name: Run tests through proxy
         working-directory: sources
         env:
-          HTTP_PROXY: http://localhost:${{ env.MITM_PORT }}
-          HTTPS_PROXY: http://localhost:${{ env.MITM_PORT }}
-          # Tell Node.js TLS to trust the mitmproxy CA so HTTPS calls succeed
-          NODE_EXTRA_CA_CERTS: ${{ env.MITM_CERT_DIR }}/mitmproxy-ca-cert.pem
-        run: npm test
+          HTTP_PROXY: http://localhost:8082
+          HTTPS_PROXY: http://localhost:8082
+        run: |
+          # Tell Node.js TLS to trust the mitmproxy CA so HTTPS calls succeed.
+          # NODE_EXTRA_CA_CERTS is set here via shell so $HOME resolves correctly
+          # (values written to $GITHUB_ENV are not available via the env expression context).
+          export NODE_EXTRA_CA_CERTS="$HOME/.mitmproxy/mitmproxy-ca-cert.pem"
+          npm test
 
       - name: Analyze traffic logs
         if: always()
