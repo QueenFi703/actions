@@ -19,7 +19,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Start Grafana Alloy
         uses: ./.github/actions/setup-alloy
@@ -29,7 +29,7 @@ jobs:
           grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
           cache: npm
