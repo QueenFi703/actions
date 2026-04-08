@@ -9,7 +9,7 @@ inputs:
   node-version:
     description: 'Node.js version used to run the agent.'
     required: false
-    default: '20'
+    default: '24'
 
   github-token:
     description: >
@@ -49,7 +49,7 @@ runs:
         # package-lock.json lives one directory above thresh/ (the repo root).
         # When this action is checked out from the Marketplace, github.action_path
         # points to the thresh/ subdirectory inside the cloned action repo.
-        cache-dependency-path: '${{ github.action_path }}/../package-lock.json'
+        cache-dependency-path: '${{ github.workspace }}/package-lock.json'
 
     - name: Install dependencies
       shell: bash

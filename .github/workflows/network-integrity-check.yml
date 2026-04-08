@@ -25,14 +25,18 @@ jobs:
           pip install mitmproxy
           # Write captured flows to a file for later inspection.
           # --ssl-insecure allows interception of TLS traffic on the runner.
-          mitmdump --listen-port 8080 --save-stream-file /tmp/mitm-flows.bin \
+          mitmdump --listen-port 8082 --save-stream-file /tmp/mitm-flows.bin \
             --ssl-insecure 2>/tmp/mitm.log &
           echo "MITM_PID=$!" >> "$GITHUB_ENV"
+          echo "MITM_PORT=8082" >> "$GITHUB_ENV"
           # Wait briefly for the proxy to bind its port
           for i in $(seq 1 10); do
-            ss -tlnp | grep -q ':8080' && echo "mitmproxy ready" && break
+            ss -tlnp | grep -q ':8082' && echo "mitmproxy ready" && break
             sleep 1
           done
+          # Ensure the mitmproxy CA cert is readable by Node.js
+          mkdir -p /root/.mitmproxy
+          chmod -R a+rX /root/.mitmproxy || true
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -48,8 +52,8 @@ jobs:
       - name: Run tests through proxy
         working-directory: sources
         env:
-          HTTP_PROXY: http://localhost:8080
-          HTTPS_PROXY: http://localhost:8080
+          HTTP_PROXY: http://localhost:${{ env.MITM_PORT }}
+          HTTPS_PROXY: http://localhost:${{ env.MITM_PORT }}
           # Tell Node.js TLS to trust the mitmproxy CA so HTTPS calls succeed
           NODE_EXTRA_CA_CERTS: /root/.mitmproxy/mitmproxy-ca-cert.pem
         run: npm test
