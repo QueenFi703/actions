@@ -35,8 +35,10 @@ jobs:
             sleep 1
           done
           # Ensure the mitmproxy CA cert is readable by Node.js
-          mkdir -p /root/.mitmproxy
-          chmod -R a+rX /root/.mitmproxy || true
+          # Use $HOME instead of /root, which may not be writable on GitHub-hosted runners
+          mkdir -p "$HOME/.mitmproxy"
+          chmod -R a+rX "$HOME/.mitmproxy" || true
+          echo "MITM_CERT_DIR=$HOME/.mitmproxy" >> "$GITHUB_ENV"
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -55,7 +57,7 @@ jobs:
           HTTP_PROXY: http://localhost:${{ env.MITM_PORT }}
           HTTPS_PROXY: http://localhost:${{ env.MITM_PORT }}
           # Tell Node.js TLS to trust the mitmproxy CA so HTTPS calls succeed
-          NODE_EXTRA_CA_CERTS: /root/.mitmproxy/mitmproxy-ca-cert.pem
+          NODE_EXTRA_CA_CERTS: ${{ env.MITM_CERT_DIR }}/mitmproxy-ca-cert.pem
         run: npm test
 
       - name: Analyze traffic logs
