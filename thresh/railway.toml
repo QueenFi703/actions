@@ -1,0 +1,19 @@
+# Railway deployment configuration for the Thresh webhook server.
+# https://docs.railway.app/reference/config-as-code
+
+[build]
+builder = "nixpacks"
+buildCommand = "npm ci"
+
+[deploy]
+startCommand = "node --loader ts-node/esm thresh/app/server.ts"
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
+
+[envs]
+NODE_ENV = "production"
+# Set these via Railway's dashboard → Variables:
+#   APP_ID
+#   PRIVATE_KEY
+#   WEBHOOK_SECRET
+#   PORT  (Railway sets this automatically)

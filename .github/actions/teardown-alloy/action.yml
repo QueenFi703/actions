@@ -1,0 +1,13 @@
+name: 'Teardown Grafana Alloy'
+description: 'Dumps Grafana Alloy logs and removes the ephemeral container.'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Dump Alloy logs
+      shell: bash
+      run: docker logs alloy 2>&1 || true
+
+    - name: Remove Alloy container
+      shell: bash
+      run: docker rm -f alloy 2>/dev/null || true

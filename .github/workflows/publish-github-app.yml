@@ -19,15 +19,24 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+
+      - name: Start Grafana Alloy
+        uses: ./.github/actions/setup-alloy
+        with:
+          service-name: publish-github-app
+          grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+          grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Generate Registration URL
         if: inputs.action == 'generate-registration-url'
@@ -46,3 +55,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Teardown Grafana Alloy
+        if: always()
+        uses: ./.github/actions/teardown-alloy

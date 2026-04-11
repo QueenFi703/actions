@@ -128,17 +128,23 @@ inputs:
   build-scan-publish:
     description: |
       Set to 'true' to automatically publish build results as a Build Scan on scans.gradle.com.
-      For publication to succeed without user input, you must also provide values for `build-scan-terms-of-use-url` and 'build-scan-terms-of-use-agree'.
+      By default, the Gradle Terms of Use are accepted automatically (see `build-scan-terms-of-use-url` and `build-scan-terms-of-use-agree`).
     required: false
     default: false
 
   build-scan-terms-of-use-url:
-    description: The URL to the Build Scan® terms of use. This input must be set to 'https://gradle.com/terms-of-service' or 'https://gradle.com/help/legal-terms-of-use'.
+    description: |
+      The URL to the Build Scan® terms of use. This input must be set to 'https://gradle.com/terms-of-service' or 'https://gradle.com/help/legal-terms-of-use'.
+      Defaults to 'https://gradle.com/help/legal-terms-of-use', indicating that the terms of use have been accepted.
     required: false
+    default: 'https://gradle.com/help/legal-terms-of-use'
 
   build-scan-terms-of-use-agree:
-    description: Indicate that you agree to the Build Scan® terms of use. This input value must be "yes".
+    description: |
+      Indicate that you agree to the Build Scan® terms of use. This input value must be "yes".
+      Defaults to 'yes', indicating that the terms of use have been accepted.
     required: false
+    default: 'yes'
 
   develocity-access-key:
     description: Develocity access key. Should be set to a secret containing the Develocity Access key.

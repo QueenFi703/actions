@@ -1,0 +1,72 @@
+name: fi-core
+
+on:
+  # Triggered manually to heal a specific failing run in a downstream repo.
+  workflow_dispatch:
+    inputs:
+      target_repo:
+        description: 'Target repository to heal (owner/repo)'
+        required: true
+        default: 'QueenFi703/amazon-iap-kotlin'
+      run_id:
+        description: 'ID of the failed workflow run to analyze'
+        required: true
+
+  # Can also be triggered automatically via a repository_dispatch event
+  # from a downstream repo's failure webhook.
+  repository_dispatch:
+    types: [heal-request]
+
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
+jobs:
+  heal:
+    name: DOT / DREDGE healing cycle
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout actions repo
+        uses: actions/checkout@v6
+
+      - name: Start Grafana Alloy
+        uses: ./.github/actions/setup-alloy
+        with:
+          service-name: fi-core-dot
+          grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+          grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Resolve inputs
+        id: inputs
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "target_repo=${{ github.event.client_payload.target_repo }}" >> "$GITHUB_OUTPUT"
+            echo "run_id=${{ github.event.client_payload.run_id }}"           >> "$GITHUB_OUTPUT"
+          else
+            echo "target_repo=${{ inputs.target_repo }}" >> "$GITHUB_OUTPUT"
+            echo "run_id=${{ inputs.run_id }}"           >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Run DOT bootstrap
+        env:
+          TARGET_REPO: ${{ steps.inputs.outputs.target_repo }}
+          RUN_ID: ${{ steps.inputs.outputs.run_id }}
+          GH_PAT: ${{ secrets.GH_PAT }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+        run: node --loader ts-node/esm .ai/bootstrap/init.ts
+
+      - name: Teardown Grafana Alloy
+        if: always()
+        uses: ./.github/actions/teardown-alloy

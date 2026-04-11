@@ -1,0 +1,22 @@
+{
+  "name": "Thresh Agent",
+  "description": "Self-healing pipeline agent — automatically detects and fixes common GitHub Actions issues across your repositories.",
+  "url": "https://github.com/QueenFi703/actions",
+  "hook_attributes": {
+    "url": "https://YOUR_DEPLOY_URL/api/github/hooks",
+    "active": true
+  },
+  "redirect_url": "https://YOUR_DEPLOY_URL/done",
+  "public": false,
+  "default_permissions": {
+    "contents": "write",
+    "pull_requests": "write",
+    "workflows": "write",
+    "metadata": "read"
+  },
+  "default_events": [
+    "pull_request",
+    "push",
+    "workflow_run"
+  ]
+}

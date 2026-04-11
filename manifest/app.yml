@@ -1,7 +1,7 @@
 name: Actions Run Inspector
 url: https://github.com/QueenFi703/queenfi-github-app-core
-hook_attributes:
-  url: https://github.com/QueenFi703/queenfi-github-app-core/actions
+# hook_attributes:
+#   url: https://example.com/your-webhook-endpoint
 
 public: true
 

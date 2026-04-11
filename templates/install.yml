@@ -6,4 +6,4 @@ on:
 
 jobs:
   use:
-    uses: QueenFi703/queenfi-github-app-core/.github/workflows/reusable-inspector.yml@main
+    uses: QueenFi703/queenfi-github-app-core/.github/workflows/reusable-inspector.yml@v0.2.0
