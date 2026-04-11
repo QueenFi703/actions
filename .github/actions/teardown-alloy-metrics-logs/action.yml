@@ -1,0 +1,13 @@
+name: 'Teardown Grafana Alloy (Metrics + Logs)'
+description: 'Stops and disables the Grafana Alloy system service installed for metrics and logs collection.'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Stop Alloy service
+      shell: bash
+      run: sudo systemctl stop alloy 2>/dev/null || true
+
+    - name: Dump Alloy service logs
+      shell: bash
+      run: sudo journalctl -u alloy --no-pager 2>/dev/null || true

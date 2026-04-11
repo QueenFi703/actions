@@ -1,8 +1,138 @@
-name: QueenFi703/Github bootstrap app
-description: A collection of actions for building Gradle projects, as well as generating a dependency graph via Dependency Submission.
+name: 'Gradle Build Action'
+description: 'Sets up Java and Gradle for GitHub Actions workflows. Optionally submits a dependency graph for supply-chain security.'
+
+inputs:
+  # Java configuration
+  java-version:
+    description: 'Java version to use. Defaults to 17.'
+    required: false
+    default: '17'
+
+  distribution:
+    description: 'Java distribution to use (e.g. temurin, zulu, adopt). Defaults to temurin.'
+    required: false
+    default: 'temurin'
+
+  cache:
+    description: 'Java dependency cache type to pass to actions/setup-java (e.g. gradle, maven). Leave empty to disable.'
+    required: false
+
+  # Gradle version
+  gradle-version:
+    description: |
+      Gradle version to use. If specified, this Gradle version will be downloaded, added to the PATH and used for invoking Gradle.
+      If not provided, it is assumed that the project uses the Gradle Wrapper.
+    required: false
+
+  # Cache configuration
+  cache-disabled:
+    description: When 'true', all caching is disabled. No entries will be written to or read from the cache.
+    required: false
+    default: 'false'
+
+  cache-read-only:
+    description: |
+      When 'true', existing entries will be read from the cache but no entries will be written.
+      By default this value is 'false' for workflows on the GitHub default branch and 'true' for workflows on other branches.
+    required: false
+    default: ${{ github.event.repository != null && github.ref_name != github.event.repository.default_branch }}
+
+  cache-write-only:
+    description: |
+      When 'true', entries will not be restored from the cache but will be saved at the end of the Job.
+      Setting this to 'true' implies cache-read-only will be 'false'.
+    required: false
+    default: 'false'
+
+  cache-overwrite-existing:
+    description: When 'true', a pre-existing Gradle User Home will not prevent the cache from being restored.
+    required: false
+    default: 'false'
+
+  cache-encryption-key:
+    description: |
+      A base64 encoded AES key used to encrypt the configuration-cache data. The key is exported as 'GRADLE_ENCRYPTION_KEY' for later steps.
+      A suitable key can be generated with `openssl rand -base64 16`.
+      Configuration-cache data will not be saved/restored without an encryption key being provided.
+    required: false
+
+  cache-cleanup:
+    description: |
+      Specifies if the action should attempt to remove any stale/unused entries from the Gradle User Home prior to saving to the GitHub Actions cache.
+      By default ('on-success'), cleanup is performed when all Gradle builds succeed for the Job.
+      This behaviour can be disabled ('never'), or configured to always run irrespective of the build outcome ('always').
+      Valid values are 'never', 'on-success' and 'always'.
+    required: false
+    default: 'on-success'
+
+  # Job summary configuration
+  add-job-summary:
+    description: Specifies when a Job Summary should be included in the action results. Valid values are 'never', 'always' (default), and 'on-failure'.
+    required: false
+    default: 'always'
+
+  add-job-summary-as-pr-comment:
+    description: Specifies when each Job Summary should be added as a PR comment. Valid values are 'never' (default), 'always', and 'on-failure'. No action will be taken if the workflow was not triggered from a pull request.
+    required: false
+    default: 'never'
+
+  # Dependency Graph configuration (for setup-gradle step)
+  dependency-graph:
+    description: |
+      Specifies if a GitHub dependency snapshot should be generated for each Gradle build, and if so, how.
+      Valid values are 'disabled' (default), 'generate', 'generate-and-submit', 'generate-submit-and-upload', 'generate-and-upload', and 'download-and-submit'.
+    required: false
+    default: 'disabled'
+
+  # Wrapper validation configuration
+  validate-wrappers:
+    description: |
+      When 'true' (the default) the action will automatically validate all wrapper jars found in the repository.
+      If the wrapper checksums are not valid, the action will fail.
+    required: false
+    default: 'true'
+
+  allow-snapshot-wrappers:
+    description: |
+      When 'true', wrapper validation will include the checksums of snapshot wrapper jars.
+      Use this if you are running with nightly or snapshot versions of the Gradle wrapper.
+    required: false
+    default: 'false'
+
+  # Develocity / Build Scan configuration
+  develocity-access-key:
+    description: Develocity access key. Should be set to a secret containing the Develocity Access key.
+    required: false
+
+  develocity-url:
+    description: The URL for the Develocity server.
+    required: false
+
+  # Dependency submission configuration
+  enable-dependency-submission:
+    description: |
+      When 'true', runs the dependency-submission action after the build to generate and submit a dependency graph
+      to the GitHub Dependency Submission API. Disabled by default.
+    required: false
+    default: 'false'
+
+  build-root-directory:
+    description: Path to the root directory of the build. Default is the root of the GitHub workspace. Used when enable-dependency-submission is 'true'.
+    required: false
+
+outputs:
+  build-scan-url:
+    description: Link to the Build Scan® generated by a Gradle build. Note that this output applies to a Step executing Gradle, not to the `setup-gradle` Step itself.
+    value: ${{ steps.setup-gradle.outputs.build-scan-url }}
+  dependency-graph-file:
+    description: Path to the GitHub Dependency Graph snapshot file generated by a Gradle build. Note that this output applies to a Step executing Gradle, not to the `setup-gradle` Step itself.
+    value: ${{ steps.setup-gradle.outputs.dependency-graph-file }}
+  gradle-version:
+    description: Version of Gradle that was setup by the action.
+    value: ${{ steps.setup-gradle.outputs.gradle-version }}
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
   - run: |
       echo "::error::The path 'QueenFi703/actions' is not a valid action. Please use 'QueenFi703/actions/setup-gradle' or 'QueenFi703/actions/dependency-submission'."
@@ -11,4 +141,4 @@ runs:
 
 branding:
   icon: 'box'
-  color: 'gray-dark'
+  color: 'green'

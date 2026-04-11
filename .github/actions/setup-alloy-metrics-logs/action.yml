@@ -1,0 +1,60 @@
+name: 'Install Grafana Alloy (Metrics + Logs)'
+description: 'Installs Grafana Alloy as a system service on the runner to collect and forward CI metrics and logs to Grafana Cloud.'
+
+inputs:
+  gcloud-hosted-metrics-url:
+    description: 'Grafana Cloud Prometheus remote-write endpoint (pass secrets.GCLOUD_HOSTED_METRICS_URL)'
+    required: true
+  gcloud-hosted-metrics-id:
+    description: 'Grafana Cloud metrics instance ID (pass secrets.GCLOUD_HOSTED_METRICS_ID)'
+    required: true
+  gcloud-hosted-logs-url:
+    description: 'Grafana Cloud Loki log push endpoint (pass secrets.GCLOUD_HOSTED_LOGS_URL)'
+    required: true
+  gcloud-hosted-logs-id:
+    description: 'Grafana Cloud logs instance ID (pass secrets.GCLOUD_HOSTED_LOGS_ID)'
+    required: true
+  gcloud-rw-api-key:
+    description: 'Grafana Cloud read/write API key (pass secrets.GCLOUD_RW_API_KEY)'
+    required: true
+  gcloud-scrape-interval:
+    description: 'Prometheus scrape interval (e.g. 60s)'
+    required: false
+    default: '60s'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Grafana Alloy (metrics + logs)
+      shell: bash
+      env:
+        ARCH: amd64
+        GCLOUD_HOSTED_METRICS_URL: ${{ inputs.gcloud-hosted-metrics-url }}
+        GCLOUD_HOSTED_METRICS_ID: ${{ inputs.gcloud-hosted-metrics-id }}
+        GCLOUD_SCRAPE_INTERVAL: ${{ inputs.gcloud-scrape-interval }}
+        GCLOUD_HOSTED_LOGS_URL: ${{ inputs.gcloud-hosted-logs-url }}
+        GCLOUD_HOSTED_LOGS_ID: ${{ inputs.gcloud-hosted-logs-id }}
+        GCLOUD_RW_API_KEY: ${{ inputs.gcloud-rw-api-key }}
+      run: |
+        # NOTE: The Grafana Cloud onboarding script does not publish a versioned URL or
+        # a checksum file, so we cannot pin or verify it beyond enforcing HTTPS.
+        # Review the script at https://storage.googleapis.com/cloud-onboarding/alloy/scripts/install-linux.sh
+        # before use, and accept the supply-chain risk of using an upstream-managed installer.
+        curl --proto '=https' --tlsv1.2 -fsSL \
+          https://storage.googleapis.com/cloud-onboarding/alloy/scripts/install-linux.sh \
+          -o /tmp/alloy-install.sh
+        sudo -E /bin/sh /tmp/alloy-install.sh
+
+    - name: Wait for Alloy service to be ready
+      shell: bash
+      run: |
+        for i in $(seq 1 20); do
+          if systemctl is-active --quiet alloy; then
+            echo "Alloy service is active after $i attempts"
+            exit 0
+          fi
+          echo "Waiting for Alloy service ($i/20)..."; sleep 2
+        done
+        echo "::error::Alloy service did not become active within the timeout period"
+        sudo journalctl -u alloy --no-pager --lines=50 2>/dev/null || true
+        exit 1

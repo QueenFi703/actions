@@ -1,0 +1,82 @@
+name: Auto Inject Alloy
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/*.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Inject Alloy into workflows
+        shell: bash
+        run: |
+          changed=0
+          for file in .github/workflows/*.yml; do
+            # Skip this workflow itself to avoid self-modification loops
+            if [[ "$file" == ".github/workflows/auto-inject-alloy.yml" ]]; then
+              echo "⏭ Skipping self: $file"
+              continue
+            fi
+
+            # Skip if already instrumented (any alloy reference present)
+            if grep -qE "grafana/alloy|actions/alloy|setup-alloy|teardown-alloy" "$file"; then
+              echo "✔ Already instrumented: $file"
+              continue
+            fi
+
+            # Skip reusable/orchestrator workflows that have no direct steps block
+            if ! grep -qE '^\s+steps:' "$file"; then
+              echo "⏭ No steps block found, skipping: $file"
+              continue
+            fi
+
+            echo "⚡ Injecting Alloy into $file"
+
+            # Use a shell variable for the literal template syntax so it is not
+            # expanded by the Actions expression evaluator at parse time.
+            alloy_snippet='      - name: Start Alloy
+        uses: ./.github/actions/alloy'
+
+            awk -v snippet="$alloy_snippet" '
+            BEGIN { injected=0 }
+            /steps:/ && !injected {
+              print;
+              print snippet;
+              injected=1;
+              next;
+            }
+            { print }
+            ' "$file" > "$file.tmp"
+
+            mv "$file.tmp" "$file"
+            changed=1
+          done
+
+          if [ "$changed" -eq 0 ]; then
+            echo "✅ All workflows already instrumented — nothing to commit."
+          fi
+
+      - name: Commit injected changes
+        shell: bash
+        run: |
+          git config user.name "dot-bot"
+          git config user.email "dot@users.noreply.github.com"
+          git add .github/workflows/*.yml || true
+          if git diff --cached --quiet; then
+            echo "Nothing to commit."
+          else
+            git commit -m "🔧 Auto-inject Alloy into workflows"
+            git push || echo "⚠️ Push failed — branch may be protected or already up to date."
+          fi

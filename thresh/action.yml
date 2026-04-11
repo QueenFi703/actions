@@ -1,0 +1,103 @@
+name: 'Thresh Agent'
+description: >
+  Self-healing pipeline agent. Automatically detects and fixes common
+  GitHub Actions issues — wrong runners, missing permissions blocks, and more —
+  by running a modular patch registry against every workflow file in the repo.
+author: 'QueenFi703'
+
+inputs:
+  node-version:
+    description: 'Node.js version used to run the agent.'
+    required: false
+    default: '24'
+
+  github-token:
+    description: >
+      GitHub token used to commit fixes back to the repository.
+      Defaults to the built-in GITHUB_TOKEN.
+    required: false
+    default: ${{ github.token }}
+
+  commit-fixes:
+    description: >
+      When 'true' (the default), any patches applied are automatically
+      committed and pushed back to the branch.  Set to 'false' if you prefer
+      to inspect the diff and commit manually.
+    required: false
+    default: 'true'
+
+  commit-message:
+    description: 'Commit message used when patches are committed.'
+    required: false
+    default: '🛠 Thresh: auto-fix workflow issues'
+
+outputs:
+  patches-applied:
+    description: >
+      Number of patches applied during this run.  '0' means all workflows
+      were already healthy.
+    value: ${{ steps.thresh.outputs.patches-applied }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ inputs.node-version }}
+        cache: 'npm'
+        # package-lock.json lives one directory above thresh/ (the repo root).
+        # When this action is checked out from the Marketplace, github.action_path
+        # points to the thresh/ subdirectory inside the cloned action repo.
+        cache-dependency-path: '${{ github.workspace }}/package-lock.json'
+
+    - name: Install dependencies
+      shell: bash
+      working-directory: ${{ github.action_path }}/..
+      run: npm ci
+
+    - name: Run Thresh patches
+      id: thresh
+      shell: bash
+      env:
+        GITHUB_WORKSPACE: ${{ github.workspace }}
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        OUTPUT=$("${{ github.action_path }}/../node_modules/.bin/tsx" \
+          "${{ github.action_path }}/agent/local-runner.ts" 2>&1) || EXIT_CODE=$?
+
+        echo "$OUTPUT"
+
+        # Count applied patches from stdout markers
+        PATCHES_APPLIED=$(echo "$OUTPUT" | grep -c "^✔" || true)
+        echo "patches-applied=${PATCHES_APPLIED}" >> "$GITHUB_OUTPUT"
+
+        if [ "${EXIT_CODE:-0}" -ne 0 ]; then
+          exit "${EXIT_CODE}"
+        fi
+
+    - name: Configure git identity
+      if: inputs.commit-fixes == 'true'
+      shell: bash
+      run: |
+        git config user.name  "Thresh Agent"
+        git config user.email "thresh-agent@users.noreply.github.com"
+
+    - name: Commit and push applied patches
+      if: inputs.commit-fixes == 'true'
+      shell: bash
+      working-directory: ${{ github.workspace }}
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+      run: |
+        git add -A
+        if git diff --staged --quiet; then
+          echo "✅ Nothing to commit — no patches were needed."
+        else
+          git commit -m "${{ inputs.commit-message }}"
+          git push
+        fi
+
+branding:
+  icon: 'zap'
+  color: 'orange'

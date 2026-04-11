@@ -1,0 +1,60 @@
+name: DOT Observability Layer
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "fix/**"
+
+jobs:
+  observe:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Start Grafana Alloy (traces)
+        uses: ./.github/actions/setup-alloy
+        with:
+          service-name: dot-ci-actions
+          grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+          grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
+
+      - name: Install Grafana Alloy (metrics + logs)
+        uses: ./.github/actions/setup-alloy-metrics-logs
+        with:
+          gcloud-hosted-metrics-url: ${{ secrets.GCLOUD_HOSTED_METRICS_URL }}
+          gcloud-hosted-metrics-id: ${{ secrets.GCLOUD_HOSTED_METRICS_ID }}
+          gcloud-hosted-logs-url: ${{ secrets.GCLOUD_HOSTED_LOGS_URL }}
+          gcloud-hosted-logs-id: ${{ secrets.GCLOUD_HOSTED_LOGS_ID }}
+          gcloud-rw-api-key: ${{ secrets.GCLOUD_RW_API_KEY }}
+          gcloud-scrape-interval: '60s'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: sources/.nvmrc
+
+      - name: Install dependencies
+        working-directory: sources
+        run: npm ci
+
+      - name: Build
+        working-directory: sources
+        run: npm run build
+
+      - name: Run tests
+        working-directory: sources
+        run: npm test
+
+      - name: Teardown Grafana Alloy (traces)
+        if: always()
+        uses: ./.github/actions/teardown-alloy
+
+      - name: Teardown Grafana Alloy (metrics + logs)
+        if: always()
+        uses: ./.github/actions/teardown-alloy-metrics-logs

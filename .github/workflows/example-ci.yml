@@ -1,0 +1,33 @@
+name: Example CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "fix/**"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Start Alloy
+        uses: ./.github/actions/alloy
+        with:
+          grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+          grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
+          service-name: example-ci
+
+      - name: Run tests
+        run: |
+          echo "Running tests..."
+
+      - name: Teardown Alloy
+        if: always()
+        uses: ./.github/actions/teardown-alloy

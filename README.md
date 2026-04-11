@@ -1,46 +1,26 @@
 # GitHub Actions for Gradle builds
 
-This repository provides a zero-configuration GitHub App bootstrap system with automatic fallback to GITHUB_TOKEN and progressive capability escalation.
-
-## GitHub App Bootstrap (`queenfi703/github-bootstrap-app-core`)
-
-### Features
-- ✅ No secrets required to start
-- 🔑 Supports `GITHUB_TOKEN` authentication (available automatically in Actions)
-- 🔁 GitHub App auth support planned (not yet implemented)
-- 🔌 Reusable across any repo
-
-See [docs/setup.md](docs/setup.md) for setup instructions and [docs/architecture.md](docs/architecture.md) for design details.
-
----
-
-This repository also contains a set of GitHub Actions that are useful for building Gradle projects on GitHub.
+A set of GitHub Actions that accelerate and simplify Gradle builds on GitHub — with smart caching, wrapper validation, job summaries, and optional supply-chain security via dependency graph submission.
 
 > [!IMPORTANT]
 > ## Licensing notice
 >
 > The software in this repository is licensed under the [MIT License](LICENSE).
 >
-> The caching functionality in this project has been extracted into `gradle-actions-caching`, a proprietary commercial component that is not covered by the MIT License for this repository. 
+> The caching functionality in this project has been extracted into `gradle-actions-caching`, a proprietary commercial component that is not covered by the MIT License for this repository.
 > The bundled `gradle-actions-caching` component is licensed and governed by a separate license, available at https://gradle.com/legal/terms-of-use/.
 >
 > The `gradle-actions-caching` component is used only when caching is enabled and is not loaded or used when caching is disabled.
 >
-> Use of the `gradle-actions-caching` component is subject to a separate license, available at https://gradle.com/legal/terms-of-use/. 
+> Use of the `gradle-actions-caching` component is subject to a separate license, available at https://gradle.com/legal/terms-of-use/.
 > If you do not agree to these license terms, do not use the `gradle-actions-caching` component.
 
-This license notice will be displayed in workflow logs and each job summary. To suppress this message, 
+This license notice will be displayed in workflow logs and each job summary. To suppress this message,
 either [enable build scan publishing](docs/setup-gradle.md#publishing-to-scansgradlecom) (terms of use are pre-accepted by default) in your workflow, or [provide a Develocity access key](docs/setup-gradle.md#managing-develocity-access-keys).
 
-## The `setup-gradle` action
+## Recommended usage — root meta-action
 
-The `setup-gradle` action can be used to configure Gradle for optimal execution on any platform supported by GitHub Actions.
-
-This replaces the previous `gradle/gradle-build-action`, which now delegates to this implementation.
-
-The recommended way to execute any Gradle build is with the help of the [Gradle Wrapper](https://docs.gradle.org/current/userguide/gradle_wrapper.html), and the examples assume that the Gradle Wrapper has been configured for the project. See [this example](docs/setup-gradle.md#build-with-a-specific-gradle-version) if your project doesn't use the Gradle Wrapper.
-
-### Example usage
+The simplest way to get started is with the root meta-action (`QueenFi703/actions`). It sets up Java and Gradle in a single step with sensible defaults.
 
 ```yaml
 name: Build
@@ -53,28 +33,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v6
-    - name: Setup Java
-      uses: actions/setup-java@v5
-      with:
-        distribution: 'temurin'
-        java-version: 17
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@v5
+      uses: actions/checkout@v4
+    - name: Setup Java and Gradle
+      uses: QueenFi703/actions@v1
     - name: Build with Gradle
       run: ./gradlew build
 ```
 
-See the [full action documentation](docs/setup-gradle.md) for more advanced usage scenarios.
+### Customising Java and Gradle
 
-## The `dependency-submission` action
+```yaml
+    - name: Setup Java and Gradle
+      uses: QueenFi703/actions@v1
+      with:
+        java-version: 21
+        distribution: temurin
+        gradle-version: '8.7'
+        cache-read-only: false
+```
 
-Generates and submits a dependency graph for a Gradle project, allowing GitHub to alert about reported vulnerabilities in your project dependencies.
+### Enabling dependency graph submission
 
-The following workflow will generate a dependency graph for a Gradle project and submit it immediately to the repository via the
-Dependency Submission API. For most projects, this default configuration should be all that you need.
-
-Simply add this as a new workflow file to your repository (eg `.github/workflows/dependency-submission.yml`).
+Set `enable-dependency-submission: true` to generate and submit a dependency graph for supply-chain security (requires `contents: write` permission):
 
 ```yaml
 name: Dependency Submission
@@ -91,17 +71,70 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v6
+      uses: actions/checkout@v4
+    - name: Setup Java and Gradle, submit dependency graph
+      uses: QueenFi703/actions@v1
+      with:
+        enable-dependency-submission: true
+```
+
+## Advanced usage — sub-actions
+
+For fine-grained control, use the sub-actions directly:
+
+- **`QueenFi703/actions/setup-gradle@v1`** — Configure Gradle caching, wrapper validation, build scans, and more.
+- **`QueenFi703/actions/dependency-submission@v1`** — Generate and submit a dependency graph independently.
+
+### Example: `setup-gradle` sub-action
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
     - name: Setup Java
-      uses: actions/setup-java@v5
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: 17
+    - name: Setup Gradle
+      uses: QueenFi703/actions/setup-gradle@v1
+    - name: Build with Gradle
+      run: ./gradlew build
+```
+
+See the [full setup-gradle documentation](docs/setup-gradle.md) for all available inputs and advanced usage scenarios.
+
+### Example: `dependency-submission` sub-action
+
+```yaml
+name: Dependency Submission
+
+on:
+  push:
+    branches: [ 'main' ]
+
+permissions:
+  contents: write
+
+jobs:
+  dependency-submission:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    - name: Setup Java
+      uses: actions/setup-java@v4
       with:
         distribution: 'temurin'
         java-version: 17
     - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@v5
+      uses: QueenFi703/actions/dependency-submission@v1
 ```
 
-See the [full action documentation](docs/dependency-submission.md) for more advanced usage scenarios.
+See the [full dependency-submission documentation](docs/dependency-submission.md) for more advanced usage scenarios.
 
 ## The `wrapper-validation` action
 
@@ -126,8 +159,16 @@ jobs:
     name: "Validation"
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: gradle/actions/wrapper-validation@v5
+      - uses: actions/checkout@v4
+      - uses: QueenFi703/actions/wrapper-validation@v1
 ```
 
 See the [full action documentation](docs/wrapper-validation.md) for more advanced usage scenarios.
+
+## Credits
+
+| Name | GitHub |
+|---|---|
+| Sophia Cole | [@QueenFi703](https://github.com/QueenFi703) |
+
+See [CONTRIBUTORS.md](CONTRIBUTORS.md) for the full list.
