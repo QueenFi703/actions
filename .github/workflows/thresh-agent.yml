@@ -1,0 +1,38 @@
+name: Thresh Agent
+
+# Self-healing pipeline agent.
+# Uses the Thresh composite action (thresh/action.yml) to detect and fix
+# common GitHub Actions issues via the modular patch registry.
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - master
+  workflow_run:
+    workflows: ["*"]
+    types: [completed]
+
+jobs:
+  thresh:
+    name: Run Thresh patches
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: ${{ github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          fetch-depth: 0
+
+      - name: Run Thresh Agent
+        uses: ./thresh
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          commit-fixes: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
