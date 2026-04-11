@@ -98,41 +98,71 @@ The injector skips itself (`auto-inject-alloy.yml`) and reusable/orchestrator wo
 
 Add these in **Settings → Secrets and variables → Actions**.
 
-> **Note:** When any secret is absent the corresponding Alloy component will be misconfigured. Alloy will log a startup error for that component (visible in the "Dump Alloy logs" / teardown step), but all other pipelines continue normally.
+---
 
-## Linux Host Installation
+## `integrations_node_exporter.alloy` — Host Metrics & Logs Integration
 
-Use the official one-line installer to install Grafana Alloy on a Linux host and connect it to your Grafana Cloud stack.
+`integrations_node_exporter.alloy` adds a **node_exporter + journald** integration that ships host-level metrics to a Prometheus remote-write endpoint and system journal logs to Grafana Cloud Loki.
 
-> **⚠️ Security warning:** `GCLOUD_RW_API_KEY` is a sensitive credential.
-> **Never commit API keys to version control.** Replace the placeholder below with your own key supplied at runtime via a secrets manager or environment variable — do not hard-code it.
-> If a real key has been shared publicly, rotate it immediately in the Grafana Cloud portal.
+### What it does
 
-```sh
-GCLOUD_HOSTED_METRICS_ID="3084064" GCLOUD_HOSTED_METRICS_URL="https://prometheus-prod-66-prod-us-east-3.grafana.net/api/prom/push" GCLOUD_HOSTED_LOGS_ID="1537707" GCLOUD_HOSTED_LOGS_URL="https://logs-prod-042.grafana.net/loki/api/v1/push" GCLOUD_FM_URL="https://fleet-management-prod-028.grafana.net" GCLOUD_FM_POLL_FREQUENCY="60s" GCLOUD_FM_HOSTED_ID="1579918" ARCH="amd64" GCLOUD_RW_API_KEY="<YOUR_GCLOUD_RW_API_KEY>" /bin/sh -c "$(curl -fsSL https://storage.googleapis.com/cloud-onboarding/alloy/scripts/install-linux.sh)"
+#### Metrics pipeline
+1. **`prometheus.exporter.unix`** — runs the built-in node_exporter with a curated set of collectors:
+   - Disables: `ipvs`, `btrfs`, `infiniband`, `xfs`, `zfs`
+   - Restricts filesystem, netclass, and netdev collection to exclude virtual/container interfaces and transient mounts.
+2. **`discovery.relabel`** — stamps every scrape target with `instance = <hostname>` and `job = integrations/node_exporter`.
+3. **`prometheus.scrape`** — scrapes the relabeled targets.
+4. **`prometheus.relabel`** — keeps only the curated allowlist of node_exporter metric names before forwarding to `prometheus.remote_write.metrics_service`.
+
+#### Logs pipeline
+1. **`loki.source.journal`** (inside the `journal_module` declare) — reads the systemd journal (up to 12 h old) and maps journal fields (`__journal__systemd_unit`, `__journal__boot_id`, `__journal__transport`, `__journal_priority_keyword`) to Loki labels (`unit`, `boot_id`, `transport`, `level`).
+2. **`loki.relabel "integrations_node_exporter"`** — sets `job = integrations/node_exporter` and `instance = <hostname>` so logs and metrics share the same identity labels.
+3. Forwards logs to `loki.write.grafana_cloud_loki`.
+
+### Required components (defined elsewhere)
+
+| Component | Purpose |
+|---|---|
+| `prometheus.remote_write.metrics_service` | Remote-write destination for metrics |
+| `loki.write.grafana_cloud_loki` | Loki write destination for logs |
+
+These must be defined in your main Alloy configuration (e.g. `config.alloy`) before loading this file.
+
+### Usage
+
+Load this file alongside your main Alloy config, or `import.file` / concatenate it into your primary config:
+
+```bash
+alloy run monitoring/alloy/config.alloy monitoring/alloy/integrations_node_exporter.alloy
 ```
 
-### Environment variables
+Your main `config.alloy` (or equivalent) must define:
 
-| Variable | Example value | Purpose |
-|---|---|---|
-| `GCLOUD_HOSTED_METRICS_ID` | `3084064` | Grafana Cloud Prometheus (Mimir) instance ID used to identify the remote write target |
-| `GCLOUD_HOSTED_METRICS_URL` | `https://prometheus-prod-66-…/api/prom/push` | Remote write endpoint for Prometheus metrics |
-| `GCLOUD_HOSTED_LOGS_ID` | `1537707` | Grafana Cloud Loki instance ID used to identify the log push target |
-| `GCLOUD_HOSTED_LOGS_URL` | `https://logs-prod-042.…/loki/api/v1/push` | Push endpoint for Loki logs |
-| `GCLOUD_FM_URL` | `https://fleet-management-prod-028.grafana.net` | Fleet Management endpoint used for centralized Alloy configuration |
-| `GCLOUD_FM_POLL_FREQUENCY` | `60s` | How often Alloy polls Fleet Management for configuration updates |
-| `GCLOUD_FM_HOSTED_ID` | `1579918` | Fleet Management stack ID that identifies this installation |
-| `ARCH` | `amd64` | CPU architecture of the target host (`amd64` or `arm64`) |
-| `GCLOUD_RW_API_KEY` | `glc_…` | **Sensitive.** Grafana Cloud read/write API key used to authenticate metrics, logs, and fleet management requests |
+```alloy
+prometheus.remote_write "metrics_service" {
+  endpoint {
+    url = env("PROMETHEUS_REMOTE_WRITE_URL")
+    basic_auth {
+      username = env("PROMETHEUS_USERNAME")
+      password = env("PROMETHEUS_PASSWORD")
+    }
+  }
+}
 
-### Security guidance
+loki.write "grafana_cloud_loki" {
+  endpoint {
+    url = env("LOKI_URL")
+    basic_auth {
+      username = env("LOKI_USERNAME")
+      password = env("LOKI_PASSWORD")
+    }
+  }
+}
+```
 
-- **Do not commit `GCLOUD_RW_API_KEY` (or any API key) to source code or documentation.** Always substitute a real key at runtime — never embed it in files that are committed to version control.
-- Store the key in a secrets manager (HashiCorp Vault, AWS Secrets Manager, GCP Secret Manager, etc.) and inject it into the environment at installation time.
-- When running this command in a CI/CD pipeline, supply the key via a masked secret variable (e.g. `${{ secrets.GCLOUD_RW_API_KEY }}` in GitHub Actions) rather than embedding it in the workflow file.
-- Prefer **short-lived tokens** where your Grafana Cloud plan supports them, and rotate long-lived keys regularly.
-- Audit which identities have access to the key and apply the principle of least privilege.
+Adjust the environment variable names to match your Grafana Cloud stack credentials.
+
+> **Note:** When either secret is absent the Alloy exporter will be misconfigured. Alloy will log a startup error for the exporter component (visible in the "Dump Alloy logs" / teardown step), but the OTLP receiver continues to accept spans and all CI steps continue normally. Check the Alloy container logs if you expect traces in Grafana Cloud but see none.
 
 ## Emitting traces from your steps
 
