@@ -2,6 +2,9 @@ name: Reusable Inspector
 
 on:
   workflow_call:
+  workflow_run:
+    workflows: ["*"]
+    types: [completed]
 
 jobs:
   inspect:
@@ -32,6 +35,23 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Teardown Grafana Alloy
-        if: always()
-        uses: ./.github/actions/teardown-alloy
+      - name: Compile TypeScript
+        run: npm run compile
+
+      - name: Run Self-Healing Agent
+        run: node dist/src/agent/healer.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
+
+      - name: Heal if failed
+        if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
+        run: node dist/src/agent/healer.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
+
