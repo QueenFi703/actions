@@ -1,0 +1,84 @@
+name: Alloy Injection Bot
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/*.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  inject:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure git
+        run: |
+          git config user.name "alloy-bot"
+          git config user.email "alloy-bot@users.noreply.github.com"
+
+      - name: Inject Alloy (idempotent patch)
+        run: |
+          set -e
+
+          changed=0
+
+          for file in .github/workflows/*.yml; do
+
+            if [[ "$file" == ".github/workflows/alloy-bot.yml" ]]; then
+              continue
+            fi
+
+            if grep -q "Start Alloy" "$file"; then
+              echo "✔ Already instrumented: $file"
+              continue
+            fi
+
+            if ! grep -q "steps:" "$file"; then
+              continue
+            fi
+
+            echo "⚡ Injecting Alloy into $file"
+
+            tmp=$(mktemp)
+
+            awk '
+              /^[[:space:]]*steps:[[:space:]]*$/ && !injected {
+                print
+                print "      - name: Start Alloy"
+                print "        uses: ./.github/actions/alloy"
+                injected=1
+                next
+              }
+              { print }
+            ' "$file" > "$tmp"
+
+            mv "$tmp" "$file"
+            changed=1
+          done
+
+          echo "CHANGED=$changed" >> $GITHUB_ENV
+
+      - name: Commit changes to PR branch
+        if: env.CHANGED == '1'
+        run: |
+          git add .github/workflows/*.yml
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+
+          git commit -m "🔧 Inject Alloy instrumentation"
+
+      - name: Push to PR branch
+        if: env.CHANGED == '1'
+        run: |
+          git push origin HEAD
