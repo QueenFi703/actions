@@ -1,74 +1,82 @@
-name: CI-check-and-unit-test
+name: CI - Check & Unit Test
 
 on:
   push:
     branches:
-    - 'main'
-    - 'release/**'
+      - main
+      - 'release/**'
     paths-ignore:
-    - 'dist/**'
+      - 'dist/**'
+
   pull_request:
 
 permissions:
   contents: read
+
+# ⚡ Prevent duplicate runs on rapid pushes
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   check-format-and-unit-test:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout sources
-      uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Checkout sources
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd
+        with:
+          fetch-depth: 0
 
-    - name: Start Grafana Alloy
-      uses: ./.github/actions/setup-alloy
-      with:
-        service-name: ci-check-and-unit-test
-        grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
-        grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
+      - name: Start Grafana Alloy
+        uses: ./.github/actions/setup-alloy
+        with:
+          service-name: ci-check-and-unit-test
+          grafana-endpoint: ${{ secrets.GRAFANA_CLOUD_OTLP_ENDPOINT }}
+          grafana-auth: ${{ secrets.GRAFANA_CLOUD_AUTH }}
 
-    - uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-      with:
-        node-version: 20
-        cache: npm
-        cache-dependency-path: sources/package-lock.json
-    - name: Setup Gradle
-      # Use a released version to avoid breakages
-      uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e # v6.1.0
-      env:
-        ALLOWED_GRADLE_WRAPPER_CHECKSUMS: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855 # Invalid wrapper jar used for testing
-      with:
-        gradle-version: '8.14.2'
+      - name: Set up Node.js
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: sources/package-lock.json
 
-    - name: Install Develocity npm agent
-      run: |
-        npm exec -y -- pacote extract @gradle-tech/develocity-agent@3.0.1 ~/.node_libraries/@gradle-tech/develocity-agent
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@50e97c2cd7a37755bbfafc9c5b7cafaece252f6e
+        env:
+          # ⚠️ Replace with real checksum in production
+          ALLOWED_GRADLE_WRAPPER_CHECKSUMS: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+        with:
+          gradle-version: '8.14.2'
 
-    - name: Install npm dependencies
-      run: |
-        npm clean-install
-      working-directory: sources
-      env:
-        NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
-        DEVELOCITY_ACCESS_KEY: '${{ secrets.DV_SOLUTIONS_ACCESS_KEY }}'
+      - name: Install Develocity npm agent
+        run: |
+          npm exec -y -- pacote extract @gradle-tech/develocity-agent@3.0.1 ~/.node_libraries/@gradle-tech/develocity-agent
 
-    - name: Check formatting and compile
-      run: |
-        npm run check
-        npm run compile
-      working-directory: sources
-      env:
-        NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
-        DEVELOCITY_ACCESS_KEY: '${{ secrets.DV_SOLUTIONS_ACCESS_KEY }}'
+      - name: Install npm dependencies
+        working-directory: sources
+        run: npm clean-install
+        env:
+          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DV_SOLUTIONS_ACCESS_KEY }}
 
-    - name: Run unit tests
-      run: |
-        npm test
-      working-directory: sources
-      env:
-        NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
-        DEVELOCITY_ACCESS_KEY: '${{ secrets.DV_SOLUTIONS_ACCESS_KEY }}'
+      - name: Check formatting and compile
+        working-directory: sources
+        run: |
+          npm run check
+          npm run compile
+        env:
+          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DV_SOLUTIONS_ACCESS_KEY }}
 
-    - name: Teardown Grafana Alloy
-      if: always()
-      uses: ./.github/actions/teardown-alloy
+      - name: Run unit tests
+        working-directory: sources
+        run: npm test
+        env:
+          NODE_OPTIONS: '-r @gradle-tech/develocity-agent/preload'
+          DEVELOCITY_ACCESS_KEY: ${{ secrets.DV_SOLUTIONS_ACCESS_KEY }}
+
+      - name: Teardown Grafana Alloy
+        if: always()
+        uses: ./.github/actions/teardown-alloy
