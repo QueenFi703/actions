@@ -2,18 +2,25 @@ name: Reusable Inspector
 
 on:
   workflow_call:
+
   workflow_run:
     workflows: ["*"]
     types: [completed]
 
 jobs:
   inspect:
+    # 🧠 Guard: run always for workflow_call, but for workflow_run only if NOT success
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'success' }}
+
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Start Grafana Alloy
         uses: ./.github/actions/alloy
@@ -21,7 +28,7 @@ jobs:
           service-name: reusable-inspector
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: npm
@@ -30,23 +37,16 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run Inspector
-        run: npx ts-node --esm scripts/checkStatus.ts
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Compile TypeScript
         run: npm run compile
 
-      - name: Run Self-Healing Agent
-        run: node dist/src/agent/healer.js
+      - name: Run Inspector
+        run: node dist/scripts/checkStatus.js
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
-          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
-          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
 
-      - name: Heal if failed
+      # 🔥 Only run healer when something actually failed
+      - name: Run Self-Healing Agent
         if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
         run: node dist/src/agent/healer.js
         env:
@@ -54,4 +54,3 @@ jobs:
           GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
           GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
           GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
-
