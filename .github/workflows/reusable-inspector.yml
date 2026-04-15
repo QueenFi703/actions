@@ -34,16 +34,22 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - name: Install dependencies
-        run: npm ci
+      - uses: actions/checkout@v5
 
-      - name: Compile TypeScript
-        run: npm run compile
+- uses: actions/setup-node@v5
+  with:
+    node-version: 20
+    cache: 'npm'
 
-      - name: Run Inspector
-        run: node dist/scripts/checkStatus.js
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+# Force consistent npm version (prevents lockfile drift)
+- run: npm i -g npm@10
+
+# Safety check: fail if lockfile is out of sync
+- run: npm install --package-lock-only
+- run: git diff --exit-code package-lock.json
+
+# Clean install (deterministic)
+- run: npm ci
 
       # 🔥 Only run healer when something actually failed
       - name: Run Self-Healing Agent
