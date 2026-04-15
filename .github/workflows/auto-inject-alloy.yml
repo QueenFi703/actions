@@ -10,57 +10,67 @@ on:
 permissions:
   contents: write
 
+# ⚡ Prevent multiple injector runs colliding
+concurrency:
+  group: alloy-inject-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   inject:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Inject Alloy into workflows
         shell: bash
         run: |
+          set -e
+
           changed=0
+
           for file in .github/workflows/*.yml; do
-            # Skip this workflow itself to avoid self-modification loops
+
+            # Skip self
             if [[ "$file" == ".github/workflows/auto-inject-alloy.yml" ]]; then
               echo "⏭ Skipping self: $file"
               continue
             fi
 
-            # Skip if already instrumented (any alloy reference present)
-            if grep -qE "grafana/alloy|actions/alloy|setup-alloy|teardown-alloy" "$file"; then
+            # Safer idempotency check (look for exact step name)
+            if grep -q "Start Alloy" "$file"; then
               echo "✔ Already instrumented: $file"
               continue
             fi
 
-            # Skip reusable/orchestrator workflows that have no direct steps block
-            if ! grep -qE '^\s+steps:' "$file"; then
+            # Must contain steps block
+            if ! grep -qE '^[[:space:]]*steps:' "$file"; then
               echo "⏭ No steps block found, skipping: $file"
               continue
             fi
 
             echo "⚡ Injecting Alloy into $file"
 
-            # Use a shell variable for the literal template syntax so it is not
-            # expanded by the Actions expression evaluator at parse time.
-            alloy_snippet='      - name: Start Alloy
-        uses: ./.github/actions/alloy'
+            tmp=$(mktemp)
 
-            awk -v snippet="$alloy_snippet" '
-            BEGIN { injected=0 }
-            /steps:/ && !injected {
-              print;
-              print snippet;
-              injected=1;
-              next;
-            }
-            { print }
-            ' "$file" > "$file.tmp"
+            awk '
+              BEGIN { injected=0 }
 
-            mv "$file.tmp" "$file"
+              /^[[:space:]]*steps:[[:space:]]*$/ && !injected {
+                print
+                print "      - name: Start Alloy"
+                print "        uses: ./.github/actions/alloy"
+                injected=1
+                next
+              }
+
+              { print }
+            ' "$file" > "$tmp"
+
+            mv "$tmp" "$file"
             changed=1
           done
 
@@ -73,10 +83,13 @@ jobs:
         run: |
           git config user.name "dot-bot"
           git config user.email "dot@users.noreply.github.com"
+
           git add .github/workflows/*.yml || true
+
           if git diff --cached --quiet; then
             echo "Nothing to commit."
-          else
-            git commit -m "🔧 Auto-inject Alloy into workflows"
-            git push || echo "⚠️ Push failed — branch may be protected or already up to date."
+            exit 0
           fi
+
+          git commit -m "🔧 Auto-inject Alloy into workflows"
+          git push
