@@ -1,0 +1,5 @@
+            - name: QueenFi703/Github bootstrap app
+  # You may pin to the exact commit or the version.
+  # uses: QueenFi703/actions@8421e95490be9399f27c48f91f88df734d337068
+  uses: QueenFi703/actions@v0.2.0
+          
