@@ -34,7 +34,7 @@ jobs:
         working-directory: sources
 
       - name: Update checksums file
-        run: node ../.github/workflows/update-checksums-file.js
+        run: node ../.github/workflows/update-checksums-file.cjs
         working-directory: sources
 
       - name: Import GPG key to sign commits
