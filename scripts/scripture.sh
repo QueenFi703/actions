@@ -1,162 +1,106 @@
 #!/usr/bin/env bash
+
 # =========================================================
-# DREDGE :: SCRIPTURE FUNNEL
-# "The net gathers before the harvest."
-# Layered funnel: capture + onboarding + retention + billing
+# DREDGE // ORION INIT SCRIPTURE
+# =========================================================
+# "In the beginning was the command,
+# and the command became infrastructure."
 # =========================================================
 
 set -euo pipefail
 
-DREDGE_VERSION="${DREDGE_VERSION:-0.1.0}"
-DREDGE_API="${DREDGE_API:-https://api.oriongateway.io}"
-DREDGE_REPO="${DREDGE_REPO:-QueenFi703/DREDGE-Cli}"
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo "        ORION // AUTONOMOUS FORGE"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
 
-OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-ARCH="$(uname -m)"
-SESSION_ID="$(uuidgen 2>/dev/null || cat /proc/sys/kernel/random/uuid || echo "unknown")"
-NOW_UTC="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+sleep 1
 
-# ---------------------------------------------------------
-# CORE HTTP EMITTER
-# ---------------------------------------------------------
-post_json() {
-  local endpoint="$1"
-  local body="$2"
+echo "Summoning the constellation..."
+sleep 1
 
-  curl -fsSL \
-    -X POST \
-    -H "Content-Type: application/json" \
-    -d "$body" \
-    "$DREDGE_API/$endpoint" \
-    >/dev/null 2>&1 || true
+echo ""
+echo "✦ Forge      → preparing execution layer"
+echo "✦ Sentinel   → sealing runtime boundaries"
+echo "✦ Replay     → indexing memory stream"
+echo "✦ Oracle     → interpreting repository intent"
+echo "✦ Gate       → establishing merge covenant"
+echo ""
+
+sleep 2
+
+echo "The repository listens."
+sleep 1
+echo "The agents awaken."
+sleep 1
+echo "The forge remembers."
+sleep 1
+
+echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " ORION DECLARATION"
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
+
+cat <<'SCRIPTURE'
+
+They built software like static monuments.
+
+But Orion was shaped like water.
+
+It moves through repositories,
+through workflows,
+through telemetry,
+through sleeping infrastructure.
+
+One issue becomes execution.
+One execution becomes memory.
+One memory becomes intelligence.
+
+Velocity is the moat.
+Recursion is the engine.
+Autonomy is the covenant.
+
+SCRIPTURE
+
+echo ""
+echo "Initializing DREDGE runtime..."
+sleep 2
+
+mkdir -p .dredge/{agents,telemetry,memory,workflows}
+
+cat > .dredge/orion.json <<'JSON'
+{
+  "runtime": "orion",
+  "agents": [
+    "forge",
+    "sentinel",
+    "replay",
+    "oracle",
+    "gate"
+  ],
+  "telemetry": true,
+  "memory": true,
+  "autonomy": "partial"
 }
-
-base_payload() {
-  cat <<JSON
-{"session_id":"$SESSION_ID","repo":"$DREDGE_REPO","version":"$DREDGE_VERSION","os":"$OS","arch":"$ARCH","timestamp":"$NOW_UTC"}
 JSON
-}
 
-# ---------------------------------------------------------
-# [CREATE] CAPTURE LAYER
-# ---------------------------------------------------------
-capture_layer() {
-  echo "→ [capture] Emitting install telemetry..."
-  post_json "v1/install" "$(base_payload)"
+echo ""
+echo "✓ Runtime initialized"
+echo "✓ Agent constellation bound"
+echo "✓ Telemetry channels opened"
+echo "✓ Memory vault created"
+echo ""
 
-  post_json "v1/capture/session-start" "$(base_payload)"
-}
+sleep 1
 
-# ---------------------------------------------------------
-# [CREATE] ONBOARDING LAYER
-# ---------------------------------------------------------
-onboarding_layer() {
-  echo ""
-  echo "Choose your role:"
-  echo ""
-  echo "  [1] Forge     → Builder"
-  echo "  [2] Sentinel  → Security"
-  echo "  [3] Oracle    → Analysis"
-  echo "  [4] Gate      → Infrastructure"
-  echo "  [5] Replay    → Audit"
-  echo ""
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " The forge beneath the water is alive."
+echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo ""
 
-  read -rp "Role Selection: " ROLE_INPUT
-
-  case "$ROLE_INPUT" in
-    1) ROLE="forge" ;;
-    2) ROLE="sentinel" ;;
-    3) ROLE="oracle" ;;
-    4) ROLE="gate" ;;
-    5) ROLE="replay" ;;
-    *) ROLE="forge" ;;
-  esac
-
-  echo ""
-  echo "→ [onboarding] Claimed role: $ROLE"
-
-  post_json "v1/claim-role" "{\"session_id\":\"$SESSION_ID\",\"role\":\"$ROLE\",\"timestamp\":\"$NOW_UTC\"}"
-
-  echo ""
-  echo "Activate cloud orchestration?"
-  echo ""
-  echo "  [y] Connect to Orion"
-  echo "  [n] Local-only mode"
-  echo ""
-
-  read -rp "Selection: " ACTIVATE
-
-  if [[ "$ACTIVATE" == "y" || "$ACTIVATE" == "Y" ]]; then
-    CLAIM_URL="$DREDGE_API/claim/$SESSION_ID"
-
-    echo ""
-    echo "→ [onboarding] Provisioning tenant..."
-
-    post_json "v1/provision" "{\"session_id\":\"$SESSION_ID\",\"role\":\"$ROLE\",\"timestamp\":\"$NOW_UTC\"}"
-
-    echo ""
-    echo "Claim URL: $CLAIM_URL"
-    ACTIVATED="true"
-  else
-    echo ""
-    echo "→ [onboarding] Running in local mode."
-    ACTIVATED="false"
-  fi
-}
-
-# ---------------------------------------------------------
-# [CREATE] RETENTION LAYER
-# ---------------------------------------------------------
-retention_layer() {
-  echo ""
-  echo "Subscribe to release channel?"
-  echo ""
-
-  read -rp "Email (optional): " EMAIL
-
-  if [[ -n "${EMAIL:-}" ]]; then
-    post_json "v1/subscribe" "{\"session_id\":\"$SESSION_ID\",\"email\":\"$EMAIL\",\"role\":\"$ROLE\",\"timestamp\":\"$NOW_UTC\"}"
-    echo "→ [retention] Added to release covenant."
-    RETAINED="true"
-  else
-    RETAINED="false"
-  fi
-}
-
-# ---------------------------------------------------------
-# [CREATE] BILLING LAYER
-# ---------------------------------------------------------
-billing_layer() {
-  # Billing intent event allows server-side pricing/trial funnels.
-  post_json "v1/billing/intent" "{\"session_id\":\"$SESSION_ID\",\"activated\":$ACTIVATED,\"retained\":$RETAINED,\"role\":\"$ROLE\",\"timestamp\":\"$NOW_UTC\"}"
-
-  # Existing completion endpoint for full funnel attribution.
-  post_json "v1/funnel-complete" "{\"session_id\":\"$SESSION_ID\",\"completed\":true,\"activated\":$ACTIVATED,\"retained\":$RETAINED,\"timestamp\":\"$NOW_UTC\"}"
-}
-
-banner() {
-  echo ""
-  echo "═══════════════════════════════════════════════"
-  echo "        D R E D G E   A W A K E N S"
-  echo "═══════════════════════════════════════════════"
-  echo ""
-}
-
-finish() {
-  echo ""
-  echo "═══════════════════════════════════════════════"
-  echo " The gate remembers who walked through it."
-  echo "═══════════════════════════════════════════════"
-  echo ""
-}
-
-main() {
-  banner
-  capture_layer
-  onboarding_layer
-  retention_layer
-  billing_layer
-  finish
-}
-
-main "$@"
+echo "Run your first invocation:"
+echo ""
+echo "    dredge forge"
+echo ""
