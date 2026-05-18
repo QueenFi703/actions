@@ -76,3 +76,9 @@
   "message": "Merge branch 'main' into main",
   "status": "skipped"
 }
+{
+  "timestamp": "2026-05-18T23:34:49Z",
+  "commit": "d5aaec605ee8e0c23b02569d6ff2ecd57dd79fe5",
+  "message": "Merge pull request #56 from QueenFi703/codex/add-telemetry-and-onboarding-script\n\nAdd scripts/scripture.sh onboarding funnel (telemetry, role claim, provisioning, subscribe)",
+  "status": "skipped"
+}
