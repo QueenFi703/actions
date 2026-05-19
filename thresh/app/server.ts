@@ -2,14 +2,9 @@
 /**
  * thresh/app/server.ts
  *
- * Probot-based webhook server.  Deploy this on Railway, Fly.io, or Vercel to
+ * Probot-based webhook server. Deploy this on Railway, Fly.io, or Vercel to
  * receive real-time GitHub events across all repositories where the Thresh
  * GitHub App is installed.
- *
- * Required environment variables:
- *   APP_ID          – GitHub App numeric ID
- *   PRIVATE_KEY     – GitHub App RSA private key (PEM, with literal \n)
- *   WEBHOOK_SECRET  – Secret configured on the GitHub App webhook settings
  */
 import express from "express";
 import { createNodeMiddleware, createProbot } from "probot";
@@ -47,17 +42,35 @@ const threshApp: ApplicationFunction = (probotApp) => {
   });
 };
 
-const probot = createProbot({
-  overrides: {
-    appId: process.env.APP_ID!,
-    privateKey: (process.env.PRIVATE_KEY ?? "").replace(/\\n/g, "\n"),
-    secret: process.env.WEBHOOK_SECRET,
-  },
-});
+const appId = process.env.APP_ID;
+const privateKey = process.env.PRIVATE_KEY;
+const webhookSecret = process.env.WEBHOOK_SECRET;
 
-app.use(createNodeMiddleware(threshApp, { probot }));
+if (!appId || !privateKey || !webhookSecret) {
+  app.get("*", (_req, res) => {
+    res.status(500).json({
+      error: "Missing required environment variables.",
+      required: ["APP_ID", "PRIVATE_KEY", "WEBHOOK_SECRET"],
+    });
+  });
+} else {
+  const probot = createProbot({
+    overrides: {
+      appId,
+      privateKey: privateKey.replace(/\\n/g, "\n"),
+      secret: webhookSecret,
+    },
+  });
+
+  app.use(createNodeMiddleware(threshApp, { probot }));
+}
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
-app.listen(PORT, () => {
-  console.log(`🔥 Thresh App running on port ${PORT}`);
-});
+
+if (process.env.VERCEL !== "1") {
+  app.listen(PORT, () => {
+    console.log(`🔥 Thresh App running on port ${PORT}`);
+  });
+}
+
+export default app;
