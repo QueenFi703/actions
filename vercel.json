@@ -1,0 +1,18 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "thresh/app/server.ts",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "thresh/app/server.ts"
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+}
