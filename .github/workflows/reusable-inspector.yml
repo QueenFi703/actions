@@ -9,7 +9,7 @@ on:
 
 jobs:
   inspect:
-    # 🧠 Guard: run always for workflow_call, but for workflow_run only if NOT success
+    # Guard: always run for workflow_call, but for workflow_run only when upstream did not succeed.
     if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion != 'success' }}
 
     runs-on: ubuntu-latest
@@ -17,8 +17,8 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
 
@@ -28,30 +28,24 @@ jobs:
           service-name: reusable-inspector
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: '20'
           cache: npm
           cache-dependency-path: package-lock.json
 
-      - uses: actions/checkout@v5
+      - name: Pin npm version
+        run: npm i -g npm@10
 
-- uses: actions/setup-node@v5
-  with:
-    node-version: 20
-    cache: 'npm'
+      - name: Verify lockfile stays in sync
+        run: |
+          npm install --package-lock-only
+          git diff --exit-code package-lock.json
 
-# Force consistent npm version (prevents lockfile drift)
-- run: npm i -g npm@10
+      - name: Install dependencies
+        run: npm ci
 
-# Safety check: fail if lockfile is out of sync
-- run: npm install --package-lock-only
-- run: git diff --exit-code package-lock.json
-
-# Clean install (deterministic)
-- run: npm ci
-
-      # 🔥 Only run healer when something actually failed
+      # Only run healer when something actually failed.
       - name: Run Self-Healing Agent
         if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'failure' }}
         run: node dist/src/agent/healer.js
