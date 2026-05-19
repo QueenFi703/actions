@@ -94,3 +94,9 @@
   "message": "Merge pull request #58 from QueenFi703/codex/fix-issues-on-actions-gules-site\n\nFix Vercel serverless crash in thresh app server",
   "status": "skipped"
 }
+{
+  "timestamp": "2026-05-19T03:30:36Z",
+  "commit": "586f6c1fb56f75701f091285efa49f2f9f0c49e2",
+  "message": "Merge pull request #59 from QueenFi703/codex/add-missing-required-environment-variables\n\nExpose deployment env vars for Railway/Vercel and document GitHub secrets",
+  "status": "skipped"
+}
