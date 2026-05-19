@@ -82,3 +82,9 @@
   "message": "Merge pull request #56 from QueenFi703/codex/add-telemetry-and-onboarding-script\n\nAdd scripts/scripture.sh onboarding funnel (telemetry, role claim, provisioning, subscribe)",
   "status": "skipped"
 }
+{
+  "timestamp": "2026-05-19T01:18:19Z",
+  "commit": "b47b2a149b0aece64f980b6d9a2d16dab7d24b51",
+  "message": "Merge pull request #57 from QueenFi703/codex/fix-missing-public-directory-issue\n\nAdd root Vercel config for thresh server deployment",
+  "status": "skipped"
+}
