@@ -126,7 +126,15 @@ Deploy `thresh/app/server.ts` to receive live webhook events from GitHub across 
 
 1. Import the repo in Vercel.
 2. Vercel will pick up `thresh/vercel.json` automatically.
-3. Set the same environment variables in Vercel → Settings → Environment Variables.
+3. Configure `APP_ID`, `PRIVATE_KEY`, and `WEBHOOK_SECRET` in Vercel → Settings → Environment Variables (for Production/Preview/Development as needed).
+
+#### Configure GitHub secrets
+
+If you run the local CI mode via GitHub Actions, add these repository secrets so workflow jobs and reusable workflows can authenticate when needed:
+- `GITHUB_TOKEN` (usually auto-injected by Actions)
+- `GITHUB_APP_ID`
+- `GITHUB_APP_PRIVATE_KEY`
+- `GITHUB_APP_INSTALLATION_ID`
 
 ---
 
