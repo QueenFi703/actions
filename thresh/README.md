@@ -191,6 +191,42 @@ export const myPatch: Patch = {
 | `PRIVATE_KEY` | Server env | GitHub App private key |
 | `WEBHOOK_SECRET` | Server env | Webhook HMAC secret |
 
+## Quick setup: GitHub secrets + Vercel + Railway
+
+Use GitHub CLI to create the repository secrets needed for deploy and runtime auth:
+
+```bash
+# run from the repo root
+gh secret set APP_ID --body "<github_app_id>"
+gh secret set PRIVATE_KEY --body "$(cat path/to/private-key.pem)"
+gh secret set WEBHOOK_SECRET --body "<webhook_secret>"
+gh secret set GITHUB_APP_ID --body "<github_app_id>"
+gh secret set GITHUB_APP_PRIVATE_KEY --body "$(cat path/to/private-key.pem)"
+gh secret set GITHUB_APP_INSTALLATION_ID --body "<installation_id>"
+```
+
+Then link deployments:
+
+```bash
+# Vercel
+vercel link
+vercel env add APP_ID production
+vercel env add PRIVATE_KEY production
+vercel env add WEBHOOK_SECRET production
+
+# Railway
+railway login
+railway link
+railway variables set APP_ID=<github_app_id>
+railway variables set PRIVATE_KEY="$(cat path/to/private-key.pem)"
+railway variables set WEBHOOK_SECRET=<webhook_secret>
+```
+
+After both are configured, set your GitHub App webhook URL to whichever deployment receives production traffic:
+
+- `https://<vercel-domain>/api/github/hooks`, or
+- `https://<railway-domain>/api/github/hooks`.
+
 ---
 
 ## Future evolutions
