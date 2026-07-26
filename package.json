@@ -14,7 +14,7 @@
     "@octokit/rest": "22.0.1",
     "adm-zip": "0.5.16",
     "express": "^5.1.0",
-    "js-yaml": "4.1.1",
+    "js-yaml": "4.2.0",
     "node-fetch": "3.3.2",
     "probot": "^13.4.3",
     "@types/node": "^22.19.15"
